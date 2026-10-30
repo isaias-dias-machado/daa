@@ -17,7 +17,7 @@ notebook-clean commit hook):
 source .venv/bin/activate
 ```
 
-Manual equivalent, from `tp/`:
+Manual equivalent:
 
 ```bash
 python3 -m venv .venv
