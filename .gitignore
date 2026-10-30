@@ -1,8 +1,26 @@
-# This repository is scoped to the tp/ project; everything else at the
-# repo root is ignored (the venv, practice notebooks pl*, stray notes).
-/*
-!/tp/
-!/.github/
-!/.gitignore
-!/.pre-commit-config.yaml
-!/setup.sh
+# Raw survey data is large; it is kept outside version control.
+data/
+data_v1/
+
+# Notebook / Python runtime clutter
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Large generated plots; small derived CSVs in outputs/ are tracked.
+outputs/*.png
+outputs/*.pdf
+
+# Run artifacts are reproducible; only the leaderboard is tracked.
+outputs/runs/
+*.joblib
+
+# The user-level gitignore (~/.gitignore) ignores every path starting with
+# "_", which silently hides package markers such as __init__.py. Re-include
+# them here, since .gitignore takes precedence over the global excludes file.
+!__init__.py

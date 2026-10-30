@@ -4,10 +4,10 @@
 # Everyone in the group owns the repo root: every PR needs review from
 # at least one code owner in addition to the required approvals.
 #
-# TODO(group): add the two remaining members' usernames below once they
-# accept the collaborator invites, e.g.
-#   * @isaias-dias-machado @member1 @member2
+# All owners must be on ONE line: repeating the same pattern on several
+# lines keeps only the last one, silently dropping the earlier owners.
 #
-# WARNING: if any username in this file is invalid, GitHub *silently
-# ignores the whole file* and the code-owner requirement becomes a no-op.
-* @isaias-dias-machado
+# WARNING: an owner without write access is not assigned as a code owner.
+# @Kit-Kate and @nunosilv1 only count once they accept their pending
+# collaborator invite.
+* @isaias-dias-machado @Kit-Kate @nunosilv1
