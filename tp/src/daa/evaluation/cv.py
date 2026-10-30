@@ -22,7 +22,7 @@ from sklearn.base import clone
 
 from ..config import RUNS_DIR
 from ..splits import Fold, get_folds
-from ..utils import git_sha, slugify
+from ..utils import git_dirty, git_sha, slugify
 from .metrics import METRICS, classification_summary, confusion_table
 
 SCORE_COLUMNS = ("macro_f1", "accuracy", "qwk", "mae_bands", "fit_time", "score_time")
@@ -240,6 +240,7 @@ def write_run(result: RunResult, output_dir: str | Path | None = None) -> Path:
         "n_features": result.n_features,
         "params": result.params,
         "git_sha": git_sha(),
+        "git_dirty": git_dirty(),
     }
     (run_directory / "metrics.json").write_text(
         json.dumps(metadata, indent=2, default=_json_default)
@@ -272,6 +273,7 @@ def _append_leaderboard(result: RunResult, path: Path) -> None:
         "qwk_mean": result.metrics["qwk_mean"],
         "mae_bands_mean": result.metrics["mae_bands_mean"],
         "git_sha": git_sha(),
+        "git_dirty": git_dirty(),
         "params": json.dumps(result.params, sort_keys=True, default=_json_default),
     }
     if path.exists():
