@@ -1,0 +1,8 @@
+# Strips outputs, execution counts and kernelspec from every tracked
+# notebook at commit time (and in CI via `pre-commit run --all-files`).
+# Add --extra-keys later if Colab/VSCode metadata noise shows up.
+repos:
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout

@@ -1,0 +1,8 @@
+# This repository is scoped to the tp/ project; everything else at the
+# repo root is ignored (the venv, practice notebooks pl*, stray notes).
+/*
+!/tp/
+!/.github/
+!/.gitignore
+!/.pre-commit-config.yaml
+!/setup.sh

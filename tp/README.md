@@ -9,11 +9,22 @@ people can work independently and still produce **comparable** numbers.
 
 ## Quick start
 
+From the **repo root** (one command sets up venv, dependencies and the
+notebook-clean commit hook):
+
+```bash
+./setup.sh
+source .venv/bin/activate
+```
+
+Manual equivalent, from `tp/`:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 pip install -e . --no-deps
+./.venv/bin/pre-commit install
 
 python -m pytest
 ```
@@ -122,6 +133,21 @@ are ignored by git.
    *Definitions* live in `src/` with a test.
 4. Every result worth keeping goes through `run_cv` or `run_experiment` so it
    lands on the leaderboard.
+
+### Notebook hygiene is enforced twice
+
+No tracked `.ipynb` may contain outputs or execution counts.
+
+- **Locally** the `pre-commit` hook (installed by `./setup.sh`) runs
+  `nbstripout` on committed notebooks and rewrites them on disk. To check
+  everything by hand: `pre-commit run --all-files`.
+- **Remotely** the `notebook-clean` GitHub Actions workflow reruns the same
+  check on every PR and push to `master`, so bypassing the hook with
+  `--no-verify` still fails CI. **After merge**, require the
+  `notebook-clean / notebook-clean` status check on `master`
+  (Settings → Branches → branch protection) to make it mandatory; until then
+  CI results are advisory. Pushing a dirty branch is allowed — merging it
+  into `master` is not.
 
 ## Environment overrides
 
