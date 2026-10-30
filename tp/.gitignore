@@ -6,7 +6,15 @@ data_v1/
 .ipynb_checkpoints/
 __pycache__/
 *.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
 
 # Large generated plots; small derived CSVs in outputs/ are tracked.
 outputs/*.png
 outputs/*.pdf
+
+# Run artifacts are reproducible; only the leaderboard is tracked.
+outputs/runs/
+*.joblib
