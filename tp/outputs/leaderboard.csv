@@ -1,1 +1,3 @@
 run_id,timestamp,name,n_features,macro_f1_mean,macro_f1_std,accuracy_mean,qwk_mean,mae_bands_mean,git_sha,params
+20261030T112022177764_dummy-baseline,20261030T112022177764,dummy_baseline,2512,0.0110404141791459,2.2945853447622182e-05,0.096880127878685,0.0,3.1757891732486576,57f3639,"{""model"": ""dummy"", ""model_params"": {}, ""preprocessor"": ""impute""}"
+20261030T112141171337_decision-tree-baseline,20261030T112141171337,decision_tree_baseline,2512,0.3969059115157795,0.010177881403450682,0.4056750327019281,0.9324480592394793,0.9157688198348427,57f3639,"{""model"": ""decision_tree"", ""model_params"": {""max_depth"": 12, ""min_samples_leaf"": 20}, ""preprocessor"": ""impute""}"
