@@ -1,0 +1,13 @@
+# CODEOWNERS — requires an enabled "Require review from Code Owners"
+# branch protection rule on master.
+#
+# Everyone in the group owns the repo root: every PR needs review from
+# at least one code owner in addition to the required approvals.
+#
+# TODO(group): add the two remaining members' usernames below once they
+# accept the collaborator invites, e.g.
+#   * @isaias-dias-machado @member1 @member2
+#
+# WARNING: if any username in this file is invalid, GitHub *silently
+# ignores the whole file* and the code-owner requirement becomes a no-op.
+* @isaias-dias-machado
