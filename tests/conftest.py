@@ -1,4 +1,8 @@
-"""Shared fixtures. Tests run on synthetic data, never on ``data/``."""
+"""Shared fixtures.
+
+Most tests run on synthetic data, never on ``data/``. The exception is the
+real-data test in ``test_recode.py``, which is skipped when ``data/`` is absent.
+"""
 
 from __future__ import annotations
 

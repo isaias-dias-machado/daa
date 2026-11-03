@@ -72,9 +72,12 @@ def run_experiment(
         X, y = load_train()
 
     # Imported here to keep the module import graph easy to follow.
-    from .data import infer_column_spec
+    from .data import explicit_spec, infer_column_spec
 
-    spec = infer_column_spec(X)
+    # Infer from dtypes, then apply the hand-written drops (admin metadata,
+    # near-constant columns). Both steps are deterministic and learnt from no
+    # data, so they are safe outside the CV folds.
+    spec = explicit_spec(infer_column_spec(X))
     pipeline = build_pipeline(
         build_preprocessor(spec, variant=preprocessor),
         model_name,
