@@ -1,7 +1,8 @@
 <!--
-Index of the 13 slide decks under context/slides/. Page counts measured with pdfinfo
-on 2026-10-30; total 411. Topics are page ranges read from each deck's contents page
-and slide titles. This is a map, not a substitute for the slides.
+Index of the 14 slide decks under context/slides/. Page counts measured with pdfinfo
+on 2026-10-30, except `DAA_PL_7.pdf` (2026-11-03); total 461. Topics are page ranges
+read from each deck's contents page and slide titles. This is a map, not a substitute
+for the slides.
 -->
 
 # Slides index
@@ -27,7 +28,7 @@ Read the actual slides for anything visual.
 | `optional` | May help, but is not required. |
 | `ignore` | No project content. |
 
-9 of the 13 decks are `direct`.
+10 of the 14 decks are `direct`.
 
 ## Decks
 
@@ -46,6 +47,7 @@ Read the actual slides for anything visual.
 | `DAA_PL_4(1).pdf` | Linear and Logistic Regression (Part IV) | 39 | Supervised-learning pipeline (3); linear regression with EDA, fit, metrics and LASSO (4–21); logistic regression with EDA, preprocessing, solvers and metrics (22–38); hands-on (39) | direct |
 | `DAA_PL_5.pdf` | Feature Engineering / Decision Tree Pruning and Hyperparameter Tuning (Part V) | 55 | Feature engineering: missing values (9–13), unique values (14–15), categorical encoding (16–28), dates (30–35); decision-tree EDA (36–41); classifier and GridSearch (42–48); pruning and `ccp_alpha` (49–54); hands-on (55) | direct |
 | `DAA_PL_6.pdf` | Ensemble Learning (Part VI) | 26 | Ensemble introduction (3–4); problem, EDA and preprocessing (5–9); comparison DT/logistic/RF (10–12); max voting (13–14); bagging and random forest (15–17); boosting and XGBoost (18–19); stacking (20–21); model comparison (22–25); hands-on (26) | direct |
+| `DAA_PL_7.pdf` | Interpretability and Explainability (Part VII) | 50 | Interpretability vs. explainability (5); Titanic problem and data (6–7); feature engineering and EDA (9–23); random forest classifier (24–25); feature importance: global/local and agnostic/specific (26–27); RF importance, MDI and permutation (28–33); SHAP: local, global and feature-wise (34–42); SHAP for linear regression and RF-vs-LR comparison (43–49); hands-on (50) | direct |
 
 ## Version note
 

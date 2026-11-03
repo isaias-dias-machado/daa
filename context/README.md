@@ -13,6 +13,7 @@ This directory is a map, not a library. Open only the file that answers your que
 | What did we already find in the data? | `../reports/01_feature_selection_review.md` |
 | Which slide deck covers this method, and on which pages? | `notes/slides-index.md` |
 | Corrected study notes | `notes/ml-reference.md` |
+| How do I explain a model's predictions (importance, SHAP)? | `notes/ml-reference.md` §12 |
 | What changed from the original Portuguese notes? | `notes/notas-audit.md` |
 | What is still unresolved? | `../TODO.md` |
 

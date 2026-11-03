@@ -155,3 +155,39 @@ study material, not a requirement.
   layers. `[ref]`
 - Feed-forward (no recurrence) + backpropagation is the standard workflow.
 - Vanishing gradients: backpropagation can degenerate in deep networks.
+
+## 12. Interpretability and explainability
+
+- Two questions, not one (PL7 slide 5): **interpretability** asks *why* the model
+  decided (understanding the cause); **explainability** asks *how* the model behaves,
+  explained post hoc. Both are about transparency, trust and debuggability.
+- Feature importance = the contribution of each feature to predictive performance.
+  Two independent axes:
+  - Scope: **global** (behaviour across all predictions) vs. **local** (why *this*
+    prediction).
+  - Method: **model-agnostic** (perturb the input, watch the output — permutation
+    importance, LIME, SHAP) vs. **model-specific** (read the internals — Gini/MDI in
+    trees, neuron activations).
+- MDI (mean decrease in impurity, `feature_importances_` in scikit-learn trees) is
+  computed on training data and is model-specific. It is biased toward
+  high-cardinality and continuous features, because they offer more split points.
+  `[ref]`
+- Permutation importance is model-agnostic: shuffle one column, measure the drop in
+  score. It is measured on held-out data, so it can be negative for useless features.
+  Shuffling breaks feature correlations, so it can overstate a feature that has a
+  redundant twin. `[ref]`
+- MDI and permutation importance routinely disagree in ranking, and neither is
+  "the" truth — they answer different questions. Report which one you used.
+- SHAP (SHapley Additive exPlanations) comes from cooperative game theory: the
+  prediction is distributed fairly among features, additively, so the contributions
+  sum to the output (minus the base value). It gives global and local explanations in
+  one framework, and attributes influence per feature *value*, not per feature.
+- SHAP caveats: it explains the model, not the world — a large SHAP value is not a
+  causal effect. Exact Shapley values are exponential; implementations sample, so
+  numbers move with the background dataset and the seed. `[ref]`
+- Partial Dependence Plots (PDP) show the average model response as one feature
+  varies, marginalising the rest. They are global, and they hide interactions and can
+  extrapolate into regions with no data. `[ref]`
+- Rule of thumb: a feature's importance is model-dependent. Comparing importances
+  across two model families (e.g. RF vs. linear regression) compares the models, not
+  the data.
