@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VENV_DIR="${VENV_DIR:-../.venv}"
+VENV_DIR="${VENV_DIR:-.venv}"
 
 # 1. Virtual environment (created once, reused afterwards)
 if [ ! -d "$VENV_DIR" ]; then
