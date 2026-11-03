@@ -53,6 +53,9 @@ Analysis and Validation vs. Competition.
 - Regenerate `reports/01` outputs on current `data/` (237 columns, no `WGT`) before
   quoting them as current results; until then, label them “stored outputs from
   `data_v1/`”.
+- The recode landed (`src/daa/features/recode.py`, `notebooks/03_recoding.ipynb`):
+  the frame now has 265 columns (29 parsed + 29 flags). Any feature count written
+  before 2026-11-03 (e.g. “236/234 features”) is stale; re-measure before quoting.
 
 ## Resolved
 
