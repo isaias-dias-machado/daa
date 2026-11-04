@@ -22,10 +22,10 @@ The stage asked one question:
 > Of the 255 input columns the model currently uses, how many can be removed
 > before macro F1 drops?
 
-The answer is **40 can be removed**, leaving 40 of the 136 screened columns
-(255 raw inputs expand to 1,170 columns after one-hot encoding). That answer
-comes with three qualifications that matter more than the number itself, and
-they are the substance of this document:
+The answer is that **40 columns suffice**: 40 of the 136 screened columns, down
+from 255 inputs (255 raw inputs expand to 1,170 columns after one-hot encoding).
+That answer comes with three qualifications that matter more than the number
+itself, and they are the substance of this document:
 
 1. The aggregate score hides a per-class reshuffle.
 2. The best-scoring option was **rejected by a rule**, on a margin of 0.0002.
@@ -463,13 +463,14 @@ noise, not only model quality. A rule that rejects 60 but accepts 80 is not
 tracking a real threshold.
 
 **This is a decision for the humans, not a settled result.** Options are set out
-in section 7.
+in section 8.
 
 ### 6.3 The Stage 3 check earned its cost
 
-The ordinal RF ranked `PC1A` 33rd; the deployed pipeline ranks it 1st, with 35×
-the importance. Had the check passed, `PC1A` would have been **dropped from the
-shortlist** — the single most important column under the model the group ships.
+The ordinal RF ranked `PC1A` 33rd, with importance 0.0021; the deployed pipeline
+ranks it 1st, with importance 0.1741 — an **82× increase**. Had the check passed,
+`PC1A` would have been **dropped from the shortlist**, and it is the single most
+important column under the model the group ships.
 
 The methodological lesson is the reusable part: **rank features with the
 representation the model uses, or your ranking measures your encoding, not your
@@ -527,7 +528,44 @@ findings**. Report themes, not thirteen discoveries.
 
 ---
 
-## 7. Decisions for the humans
+## 7. Why the course's own methods were not used
+
+This section exists because the course offers several feature-selection
+techniques and this stage used others. Every departure is deliberate, and a
+reader who knows only the course material is entitled to ask why.
+
+The taxonomy from Aula2b slide 22 is the frame: **filters** score each feature
+against the target without a model (chi-square); **wrappers** use a model and
+measure how much performance drops without the feature (SFS, SBE);
+**embedded** methods select as they train (LASSO, tree impurity). This stage is
+**filter then wrapper** — mutual information screens 255 → 136, permutation
+importance ranks those 136.
+
+| Course method | Where | Why not used | Verdict |
+|---|---|---|---|
+| **Chi-square test** | Aula2b 21 | Univariate and categorical-only. Would require binning the 31 numeric columns, which loses information. MI handles mixed types uniformly and adds a shuffle bias correction. | **Defensible alternative.** Chi-square would have been a reasonable choice; MI was preferred, not required. |
+| **Remove low-std / skewed / highly-correlated** | Aula2b 21 | These are hygiene rules, not target-aware selection. They answer "is this column well-behaved", not "does it predict age". | Applied implicitly by the recoding; not used as the selection criterion. |
+| **Wrapper SFS / SBE** | Aula2b 22 | Combinatorial search over 136 columns × 15 folds is infeasible. | **Substituted, not skipped.** Permutation importance is the tractable wrapper: it measures usefulness by classifier performance, which is the slide's own definition. |
+| **Embedded / LASSO** | Aula2b 22 | L1 over 1,170 one-hot columns with 16 classes is unstable, and the selection would be linear. | Not used. Would need its own validation. |
+| **PCA** | Aula2b 22 | Destroys interpretability, which the assignment explicitly requires ("analyze the factors that contribute the most"). | Rejected on requirement grounds, not performance. |
+| **Permutation importance** | PL_7 27–31 | — | **Used.** This is the core of the method. |
+| **Tree impurity (MDI)** | PL_7 30 | Biased toward high-cardinality columns; in-sample. | Used only as the RF's internal ranking in Stage 2, then superseded. |
+
+**The honest summary.** The core — rank features by the permutation importance
+of a model's macro F1 — is PL_7 plus Aula2b slide 22. The extensions are the
+validation discipline around it: repeated CV, paired comparison, a
+pre-registered rule, and nested selection.
+
+The one genuine departure is **nested selection**, and it exists to *test* the
+lecture's claim (Aula2b slide 20) that removing unimportant features reduces
+overfitting. The result is that the claim is **conditional**: the apparent gain
+is partly bought by looking at labels. That is a contribution to the course's
+argument, not a deviation from it. Section 6.5 is the other half of the same
+test — 48 columns with negative importance are direct evidence *for* the slide.
+
+---
+
+## 8. Decisions for the humans
 
 These are open. This stage informs them; it does not settle them.
 
@@ -563,7 +601,7 @@ representation.
 
 ---
 
-## 8. Limitations
+## 9. Limitations
 
 1. **The Kaggle scores are pending.** The central claim in 6.4 is unresolved
    without them. Everything else is cross-validated evidence only.
@@ -586,7 +624,7 @@ representation.
 
 ---
 
-## 9. Reproduction
+## 10. Reproduction
 
 ```bash
 # From the repo root, on c60f8f8 with a clean tree:
