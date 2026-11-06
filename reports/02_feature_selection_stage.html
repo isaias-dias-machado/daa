@@ -166,6 +166,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <li><a href="#8-decisions-for-the-humans">8. Decisions for the humans</a></li>
 <li><a href="#9-limitations">9. Limitations</a></li>
 <li><a href="#10-reproduction">10. Reproduction</a></li>
+<li><a href="#appendix-a-what-reshuffle-per-class-means">Appendix A. What "reshuffle per class" means</a></li>
 </ol>
 </nav>
 <nav class="toc" data-for="pt" hidden>
@@ -217,7 +218,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <li><a href="#7-porque-não-foram-usados-os-métodos-do-próprio-curso">7. Porque não foram usados os métodos do próprio curso</a></li>
 <li><a href="#8-decisões-para-os-humanos">8. Decisões para os humanos</a></li>
 <li><a href="#9-limitações">9. Limitações</a></li>
-<li><a href="#10-reprodução">10. Reprodução</a></li>
+<li><a href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A. O que significa "reorganizar por classe"</a></li>
 </ol>
 </nav>
 <main>
@@ -239,7 +240,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 </blockquote>
 <p>The answer is that <strong>40 columns suffice</strong>: 40 of the 136 screened columns, down from 255 inputs (255 raw inputs expand to 1,170 columns after one-hot encoding). That answer comes with three qualifications that matter more than the number itself, and they are the substance of this document:</p>
 <ol type="1">
-<li>The aggregate score hides a per-class reshuffle.</li>
+<li>The aggregate score hides a per-class reshuffle (explained in <a class="xref" href="#appendix-a-what-reshuffle-per-class-means">Appendix A</a>; evidence in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>, interpretation in <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>).</li>
 <li>The best-scoring option was <strong>rejected by a rule</strong>, on a margin of 0.0002.</li>
 <li>Once you account for the cost of <em>choosing</em> the columns, the honest estimate is <strong>worse than using everything</strong>.</li>
 </ol>
@@ -260,7 +261,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td>40 columns match the 255-column baseline <strong>in aggregate</strong>, but the per-class effect is a reshuffle: 6 classes improve, 10 get worse.</td>
+<td>40 columns match the 255-column baseline <strong>in aggregate</strong>, but the per-class effect is a <a class="concept" href="#appendix-a-what-reshuffle-per-class-means" title="Explained in Appendix A">reshuffle</a>: 6 classes improve, 10 get worse.</td>
 <td>0.4519 ± 0.0104 vs 0.4531 ± 0.0096; mean per-class delta −0.0098</td>
 <td>High</td>
 </tr>
@@ -714,7 +715,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <h2 id="6-interpretation">6. Interpretation<a class="anchor" href="#6-interpretation" aria-label="link">#</a></h2>
 <h3 id="6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">6.1 Forty columns match the baseline in aggregate, but reshuffle per class<a class="anchor" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class" aria-label="link">#</a></h3>
 <p>The aggregate difference is +0.0012, about an eighth of a standard deviation. The honest reading is <strong>"no detectable loss"</strong>, not "40 columns are as good as 255".</p>
-<p>But the per-class table shows this is not a neutral cut. Six classes improve — mostly the sparse middle bands (1, 3, 4, 7) — and ten get worse, including the well-populated bands 9, 10 and 12 and, worst of all, <strong>band 15 at −0.063</strong>. The 40-column model is not the 255-column model with less noise; it is a <strong>different</strong> model that trades some classes for others and happens to land at the same mean.</p>
+<p>But the per-class table shows this is not a neutral cut. Six classes improve — mostly the sparse middle bands (1, 3, 4, 7) — and ten get worse, including the well-populated bands 9, 10 and 12 and, worst of all, <strong>band 15 at −0.063</strong>. The 40-column model is not the 255-column model with less noise; it is a <strong>different</strong> model that trades some classes for others and happens to land at the same mean. <a class="xref" href="#appendix-a-what-reshuffle-per-class-means">Appendix A</a> spells out what "reshuffle" means and why the mean can stay flat while this happens.</p>
 <p>That matters for the project's stated goal. The assignment asks the model's predictions to be used to detect profile anomalies, which needs the middle bands to be well separated. A cut that improves bands 1 and 4 while losing band 15 is not obviously the right trade for that purpose, even though macro F1 cannot tell the difference.</p>
 <h3 id="6-2-k-60-is-the-best-mean-and-the-rule-rejected-it">6.2 K = 60 is the best mean and the rule rejected it<a class="anchor" href="#6-2-k-60-is-the-best-mean-and-the-rule-rejected-it" aria-label="link">#</a></h3>
 <p>K = 60 scores <strong>0.4587</strong>, better than the baseline on the mean and better than K = 40. It fails the guard by <strong>0.0002</strong> (−0.0102 against a −0.010 threshold).</p>
@@ -824,6 +825,20 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <li><strong>Nothing here is causal.</strong> <code>HATLEVEL</code> ranking high does not mean education causes age band; both reflect life stage.</li>
 </ol>
 <hr />
+<h2 id="appendix-a-what-reshuffle-per-class-means">Appendix A. What "reshuffle per class" means<a class="anchor" href="#appendix-a-what-reshuffle-per-class-means" aria-label="link">#</a></h2>
+<p>This appendix exists because the phrase is used in <a class="xref" href="#1-purpose-and-audience">§1</a>, <a class="xref" href="#2-executive-summary">§2</a> (finding 1) and <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>, and the report never defines it. It is a reading aid for the table in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>; it adds no new evidence.</p>
+<p><strong>The one-sentence definition.</strong> A <em>reshuffle</em> means the 40-column model and the 255-column model score <strong>about the same on average</strong>, but they are not the same on average <strong>class by class</strong>: the 40-column model wins on some bands and loses on others, and the wins and losses roughly cancel out.</p>
+<p><strong>Why a flat mean can hide it.</strong> <a class="xref" href="#3-1-macro-f1">Macro F1</a> is the plain average of 16 per-class F1 scores, and an average throws away the individual values. Two models can share a mean while having completely different per-class profiles: one can be better on the rare bands and worse on the common ones, or vice versa. The aggregate number only tells you where the average lands, not which classes it was built from. That is why the report says the aggregate <em>hides</em> the reshuffle rather than <em>contradicting</em> it.</p>
+<p><strong>How to read the table in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>.</strong> Each row is one age band. The <code>delta</code> column is <code>K=40 F1 − baseline F1</code>: negative means the 40-column model is worse on that band, positive means better. The <code>support</code> column is how many rows of the data belong to that band. Two numbers matter:</p>
+<ul>
+<li><strong>6 classes are positive, 10 are negative</strong>, so the two models disagree on 16 of 16 bands — none is exactly tied.</li>
+<li><strong>The mean delta is −0.0098</strong>, i.e. the average of the 16 deltas, which is the same thing as (K=40 macro F1 − baseline macro F1) up to rounding. It is close to zero, which is exactly the "no detectable loss" of <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>.</li>
+</ul>
+<p><strong>A worked example from the table.</strong> Band 1 gains +0.041 and band 4 gains +0.018, while band 15 loses −0.063 and bands 9 and 10 lose −0.026 each. If you only looked at the aggregate, you would conclude "the cut cost nothing". Reading the rows tells you the cut <em>moved</em> performance from some bands to others. Since macro F1 weights every band equally regardless of support, a gain on a 172-row band and a loss on a 496-row band count the same in the mean — which is why the reshuffle is invisible in the aggregate but visible per class.</p>
+<p><strong>One number does not add up.</strong> The 16 deltas in the table sum to −0.158, so their average is −0.0099, not the −0.0098 stated in <a class="xref" href="#2-executive-summary">§2</a> and <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>. The gap is rounding: each delta is shown to three decimals, so the mean carries an error of about ±0.0002. The difference is not material, but the figure should be read as "about −0.0099".</p>
+<p><strong>Why it is not the same as "the model got worse".</strong> A loss would be a uniform downward shift in every row. A reshuffle is a <em>redistribution</em>: some rows up, some down, net roughly zero. The distinction matters for <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>'s argument: the project needs the middle bands separated (for profile-anomaly detection), so a redistribution that costs band 15 is a real cost even when the mean is flat.</p>
+<p><strong>What it does not mean.</strong> It is not a statistical claim that the two models are equivalent, and it is not a claim that the per-class differences are significant — the folds are not independent (<a class="xref" href="#3-2-repeated-cross-validation">§3.2</a>, limitation 3 in <a class="xref" href="#9-limitations">§9</a>), so no significance test is run. It is a description of the table.</p>
+<hr />
 <h2 id="10-reproduction">10. Reproduction<a class="anchor" href="#10-reproduction" aria-label="link">#</a></h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From the repo root, on c60f8f8 with a clean tree:</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/jupyter</span> nbconvert <span class="at">--to</span> notebook <span class="at">--execute</span> <span class="dt">\</span></span>
@@ -889,7 +904,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 </blockquote>
 <p>A resposta é que <strong>bastam 40 colunas</strong>: 40 das 136 colunas pré-selecionadas, em vez das 255 entradas (as 255 entradas originais expandem-se para 1.170 colunas depois da codificação one-hot). Essa resposta vem com três ressalvas que importam mais do que o número em si, e são a substância deste documento:</p>
 <ol type="1">
-<li>A pontuação agregada esconde uma reorganização por classe (ver <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a> e <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>).</li>
+<li>A pontuação agregada esconde uma reorganização por classe (explicada no <a class="xref" href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A</a>; evidência no <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>, interpretação no <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>).</li>
 <li>A opção com melhor pontuação foi <strong>rejeitada por uma regra</strong>, por uma margem de 0,0002.</li>
 <li>Quando se contabiliza o custo de <em>escolher</em> as colunas, a estimativa honesta é <strong>pior do que usar tudo</strong>.</li>
 </ol>
@@ -910,7 +925,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td>40 colunas igualam a linha de base de 255 colunas <strong>em termos agregados</strong>, mas o efeito por classe é uma reorganização: 6 classes melhoram, 10 pioram.</td>
+<td>40 colunas igualam a linha de base de 255 colunas <strong>em termos agregados</strong>, mas o efeito por classe é uma <a class="concept" href="#apêndice-a-o-que-significa-reorganizar-por-classe" title="Explicado no Apêndice A">reorganização</a>: 6 classes melhoram, 10 pioram.</td>
 <td>0,4519 ± 0,0104 vs. 0,4531 ± 0,0096; delta médio por classe −0,0098</td>
 <td>Alta</td>
 </tr>
@@ -1366,7 +1381,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <h3 id="6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">6.1 Quarenta colunas igualam a linha de base em termos agregados, mas reorganizam por classe<a class="anchor" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe" aria-label="link">#</a></h3>
 <p>A evidência é a tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>.</p>
 <p>A diferença agregada é +0,0012, cerca de um oitavo de um desvio padrão. A leitura honesta é <strong>"nenhuma perda detetável"</strong>, não "40 colunas são tão boas como 255".</p>
-<p>Mas a tabela por classe mostra que este não é um corte neutro. Seis classes melhoram — sobretudo as faixas intermédias esparsas (1, 3, 4, 7) — e dez pioram, incluindo as faixas bem povoadas 9, 10 e 12 e, pior de tudo, <strong>a faixa 15 com −0,063</strong>. O modelo de 40 colunas não é o modelo de 255 colunas com menos ruído; é um modelo <strong>diferente</strong> que troca algumas classes por outras e por acaso fica na mesma média.</p>
+<p>Mas a tabela por classe mostra que este não é um corte neutro. Seis classes melhoram — sobretudo as faixas intermédias esparsas (1, 3, 4, 7) — e dez pioram, incluindo as faixas bem povoadas 9, 10 e 12 e, pior de tudo, <strong>a faixa 15 com −0,063</strong>. O modelo de 40 colunas não é o modelo de 255 colunas com menos ruído; é um modelo <strong>diferente</strong> que troca algumas classes por outras e por acaso fica na mesma média. O <a class="xref" href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A</a> explicita o que significa "reorganização" e porque é que a média pode ficar plana quando isto acontece.</p>
 <p>Isso importa para o objetivo declarado do projeto. O enunciado pede que as previsões do modelo sejam usadas para detetar anomalias de perfil, o que exige que as faixas intermédias estejam bem separadas. Um corte que melhora as faixas 1 e 4 ao mesmo tempo que perde a faixa 15 não é obviamente a troca certa para esse fim, mesmo que o F1 macro não consiga distinguir a diferença.</p>
 <h3 id="6-2-k-60-tem-a-melhor-média-e-a-regra-rejeitou-o">6.2 K = 60 tem a melhor média e a regra rejeitou-o<a class="anchor" href="#6-2-k-60-tem-a-melhor-média-e-a-regra-rejeitou-o" aria-label="link">#</a></h3>
 <p>K = 60 obtém <strong>0,4587</strong>, melhor do que a linha de base na média e melhor do que K = 40. Falha a guarda por <strong>0,0002</strong> (−0,0102 contra um limiar de −0,010).</p>
@@ -1475,6 +1490,20 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 <li><strong>A importância por permutação reparte o crédito entre colunas correlacionadas.</strong> Um único membro de um grupo correlacionado pode parecer fraco enquanto o grupo é essencial. É por isso que a <a class="xref" href="#6-6-a-concentração-de-importância-não-prevê-a-suficiência">§6.6</a> reporta temas.</li>
 <li><strong>Nada aqui é causal.</strong> <code>HATLEVEL</code> estar no topo não significa que a educação cause a faixa etária; ambos refletem a fase da vida.</li>
 </ol>
+<hr />
+<h2 id="apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A. O que significa "reorganizar por classe"<a class="anchor" href="#apêndice-a-o-que-significa-reorganizar-por-classe" aria-label="link">#</a></h2>
+<p>Este apêndice existe porque a expressão é usada no <a class="xref" href="#1-objetivo-e-público">§1</a>, no <a class="xref" href="#2-sumário-executivo">§2</a> (constatação 1) e no <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>, e o relatório nunca a define. É um auxiliar de leitura da tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>; não acrescenta evidência nova.</p>
+<p><strong>A definição numa frase.</strong> Uma <em>reorganização</em> significa que o modelo de 40 colunas e o de 255 colunas pontuam <strong>mais ou menos o mesmo em média</strong>, mas não são iguais <strong>classe a classe</strong>: o modelo de 40 colunas ganha em algumas faixas e perde noutras, e os ganhos e as perdas cancelam-se aproximadamente.</p>
+<p><strong>Porque é que uma média plana pode esconder isto.</strong> O <a class="xref" href="#3-1-f1-macro">F1 macro</a> é a média simples das 16 pontuações por classe, e uma média deita fora os valores individuais. Dois modelos podem partilhar a média e ter perfis por classe completamente diferentes: um pode ser melhor nas faixas raras e pior nas comuns, ou o contrário. O número agregado só diz onde cai a média, não diz de que classes foi construída. É por isso que o relatório diz que o agregado <em>esconde</em> a reorganização, e não que a <em>contradiz</em>.</p>
+<p><strong>Como ler a tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>.</strong> Cada linha é uma faixa etária. A coluna <code>delta</code> é <code>F1 K=40 − F1 linha de base</code>: negativo significa que o modelo de 40 colunas é pior nessa faixa, positivo significa melhor. A coluna <code>suporte</code> é o número de linhas dos dados que pertencem a essa faixa. Dois números importam:</p>
+<ul>
+<li><strong>6 classes são positivas e 10 são negativas</strong>, por isso os dois modelos discordam nas 16 faixas — nenhuma está exatamente empatada.</li>
+<li><strong>O delta médio é −0,0098</strong>, ou seja, a média dos 16 deltas, que é o mesmo que (F1 macro K=40 − F1 macro da linha de base) a menos de arredondamento. Está próximo de zero, o que é exatamente o "nenhuma perda detetável" do <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>.</li>
+</ul>
+<p><strong>Um exemplo resolvido a partir da tabela.</strong> A faixa 1 ganha +0,041 e a faixa 4 ganha +0,018, enquanto a faixa 15 perde −0,063 e as faixas 9 e 10 perdem −0,026 cada. Se olhasse apenas para o agregado, concluiria que "o corte não custou nada". Ler as linhas diz-lhe que o corte <em>deslocou</em> desempenho de umas faixas para outras. Como o F1 macro dá o mesmo peso a todas as faixas independentemente do suporte, um ganho numa faixa de 172 linhas e uma perda numa faixa de 496 linhas contam o mesmo na média — e é por isso que a reorganização é invisível no agregado mas visível por classe.</p>
+<p><strong>Um número que não fecha.</strong> Os 16 deltas da tabela somam −0,158, pelo que a sua média é −0,0099, e não os −0,0098 indicados no <a class="xref" href="#2-sumário-executivo">§2</a> e no <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>. A diferença é de arredondamento: cada delta é apresentado com três casas decimais, pelo que a média carrega um erro de cerca de ±0,0002. A diferença não é material, mas o valor deve ser lido como "cerca de −0,0099".</p>
+<p><strong>Porque não é o mesmo que "o modelo piorou".</strong> Uma perda seria um deslocamento uniforme para baixo em todas as linhas. Uma reorganização é uma <em>redistribuição</em>: umas linhas sobem, outras descem, o saldo é aproximadamente nulo. A distinção importa para o argumento do <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>: o projeto precisa das faixas intermédias bem separadas (para a deteção de anomalias de perfil), por isso uma redistribuição que custa a faixa 15 é um custo real mesmo com a média plana.</p>
+<p><strong>O que não significa.</strong> Não é uma afirmação estatística de que os dois modelos são equivalentes, nem uma afirmação de que as diferenças por classe são significativas — os folds não são independentes (<a class="xref" href="#3-2-validação-cruzada-repetida">§3.2</a>, limitação 3 do <a class="xref" href="#9-limitações">§9</a>), por isso não é corrido nenhum teste de significância. É uma descrição da tabela.</p>
 <hr />
 <h2 id="10-reprodução">10. Reprodução<a class="anchor" href="#10-reprodução" aria-label="link">#</a></h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A partir da raiz do repositório, em c60f8f8 com a árvore limpa:</span></span>
