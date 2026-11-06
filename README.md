@@ -30,7 +30,9 @@ python -m pytest
 ```
 
 Open `notebooks/00_primer.ipynb` first (Pipeline, ColumnTransformer, leakage),
-then `notebooks/01_dummy.ipynb` (end-to-end dummy baseline).
+then `01_dummy.ipynb` (end-to-end dummy baseline), `02_raw_eda.ipynb` (the raw
+files), `03_recoding.ipynb` (what the recoding does), and
+`04_feature_selection.ipynb` (from 255 inputs to a shortlist).
 
 ## The four contracts
 
@@ -54,6 +56,11 @@ result = run_experiment(
 )
 result.metrics
 ```
+
+Pass `columns=[...]` to restrict a run to a shortlist. The run records
+`feature_set`, `n_input_columns` and a short `feature_hash`, so the leaderboard
+says which columns it used. `daa.features.selection` builds the ranking, writes
+the shortlist file, and validates it on load.
 
 A notebook experiment is usually just a `Pipeline` plus `run_cv`:
 

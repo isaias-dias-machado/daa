@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 import subprocess
 
+import numpy as np
+
 from .config import PROJECT_ROOT
 
 # Only code that can change a score counts as dirty. ``outputs/`` is excluded
@@ -58,3 +60,17 @@ def slugify(value: str) -> str:
     """Turn a human name into a safe directory component."""
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", value).strip("-").lower()
     return slug or "run"
+
+
+def json_default(value):
+    """Make numpy/pandas objects JSON-friendly without losing their text form.
+
+    Purpose: run metadata and selection files both contain numpy scalars and
+    arrays. One coercion rule keeps every JSON artifact readable by the same
+    loader.
+    """
+    if isinstance(value, (np.integer, np.floating)):
+        return value.item()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    return str(value)

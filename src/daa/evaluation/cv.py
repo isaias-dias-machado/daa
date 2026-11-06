@@ -22,7 +22,7 @@ from sklearn.base import clone
 
 from ..config import RUNS_DIR
 from ..splits import Fold, get_folds
-from ..utils import git_dirty, git_sha, slugify
+from ..utils import git_dirty, git_sha, json_default, slugify
 from .metrics import METRICS, classification_summary, confusion_table
 
 SCORE_COLUMNS = ("macro_f1", "accuracy", "qwk", "mae_bands", "fit_time", "score_time")
@@ -201,15 +201,6 @@ def run_cv(
     )
 
 
-def _json_default(value):
-    """Make numpy/pandas objects JSON-friendly without losing their text form."""
-    if isinstance(value, (np.integer, np.floating)):
-        return value.item()
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    return str(value)
-
-
 def write_run(result: RunResult, output_dir: str | Path | None = None) -> Path:
     """Write one run directory and append a row to the leaderboard.
 
@@ -243,10 +234,10 @@ def write_run(result: RunResult, output_dir: str | Path | None = None) -> Path:
         "git_dirty": git_dirty(),
     }
     (run_directory / "metrics.json").write_text(
-        json.dumps(metadata, indent=2, default=_json_default)
+        json.dumps(metadata, indent=2, default=json_default)
     )
     (run_directory / "params.json").write_text(
-        json.dumps(result.params, indent=2, default=_json_default)
+        json.dumps(result.params, indent=2, default=json_default)
     )
     result.fold_scores.to_csv(run_directory / "fold_scores.csv", index=False)
     result.oof.to_csv(run_directory / "oof_predictions.csv", index=False)
@@ -274,7 +265,7 @@ def _append_leaderboard(result: RunResult, path: Path) -> None:
         "mae_bands_mean": result.metrics["mae_bands_mean"],
         "git_sha": git_sha(),
         "git_dirty": git_dirty(),
-        "params": json.dumps(result.params, sort_keys=True, default=_json_default),
+        "params": json.dumps(result.params, sort_keys=True, default=json_default),
     }
     if path.exists():
         leaderboard = pd.read_csv(path)

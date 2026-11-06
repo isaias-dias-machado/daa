@@ -16,6 +16,14 @@ venv/
 outputs/*.png
 outputs/*.pdf
 
+# Executed notebook and run log: evidence for the report, not repo artifacts.
+# The tracked notebook stays output-free; nbstripout would strip this one.
+outputs/*.ipynb
+outputs/*.log
+
+# Smoke-run artifacts: a plumbing check, never evidence.
+outputs/smoke/
+
 # Run artifacts are reproducible; only the leaderboard is tracked.
 outputs/runs/
 *.joblib

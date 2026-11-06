@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAA — feature selection stage reports</title>
+<style>
+:root {
+  --bg: #fdfdfc; --fg: #1c1c1c; --muted: #5f6368; --rule: #e3e3e0;
+  --accent: #1a5fb4; --accent-soft: #eaf1fb; --warn: #b45309;
+  --warn-soft: #fdf3e3; --code-bg: #f4f4f2; --th-bg: #f6f6f4;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c; --fg: #e6e6e3; --muted: #a0a4ab; --rule: #2e3238;
+    --accent: #7aa7f0; --accent-soft: #1e2a3d; --warn: #e0a458;
+    --warn-soft: #2d2418; --code-bg: #21242a; --th-bg: #1d2025;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.layout {
+  display: grid; grid-template-columns: 17rem minmax(0, 1fr);
+  gap: 2.5rem; max-width: 78rem; margin: 0 auto; padding: 0 1.5rem;
+}
+nav.toc {
+  position: sticky; top: 0; align-self: start; max-height: 100vh;
+  overflow-y: auto; padding: 1.5rem 0; font-size: 0.85rem;
+  border-right: 1px solid var(--rule);
+}
+nav.toc .langs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+nav.toc .langs a, nav.toc .langs span {
+  padding: 0.15rem 0.55rem; border: 1px solid var(--rule);
+  border-radius: 999px; font-size: 0.78rem;
+}
+nav.toc .langs span { background: var(--accent-soft); border-color: var(--accent); }
+nav.toc ol { list-style: none; margin: 0; padding: 0; }
+nav.toc ol ol { padding-left: 0.85rem; }
+nav.toc li { margin: 0.15rem 0; }
+nav.toc a { color: var(--muted); }
+nav.toc a:hover, nav.toc a.active { color: var(--accent); }
+nav.toc .toc-title {
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.72rem; color: var(--muted); margin-bottom: 0.6rem;
+}
+main { padding: 2rem 0 6rem; max-width: 52rem; }
+.report-header { border-bottom: 1px solid var(--rule); padding-bottom: 1rem; }
+.report-header h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 0.3rem; }
+.report-header .subtitle { color: var(--muted); margin: 0; }
+h2 { font-size: 1.4rem; margin: 2.6rem 0 0.8rem; padding-top: 0.5rem;
+     border-top: 1px solid var(--rule); }
+h3 { font-size: 1.1rem; margin: 1.9rem 0 0.6rem; }
+h1, h2, h3, h4 { scroll-margin-top: 1rem; }
+h2 .anchor, h3 .anchor { visibility: hidden; margin-left: 0.4rem;
+  font-size: 0.8em; color: var(--muted); }
+h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+blockquote {
+  margin: 1rem 0; padding: 0.6rem 1rem; border-left: 3px solid var(--accent);
+  background: var(--accent-soft); border-radius: 0 4px 4px 0;
+}
+blockquote p { margin: 0.35rem 0; }
+code {
+  font: 0.88em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px;
+}
+pre {
+  background: var(--code-bg); padding: 0.9rem 1rem; border-radius: 6px;
+  overflow-x: auto; border: 1px solid var(--rule);
+}
+pre code { background: none; padding: 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1rem 0;
+  font-size: 0.9rem; font-variant-numeric: tabular-nums;
+}
+th, td { border: 1px solid var(--rule); padding: 0.35rem 0.6rem; text-align: left;
+         vertical-align: top; }
+th { background: var(--th-bg); font-weight: 600; }
+tbody tr:nth-child(even) { background: color-mix(in srgb, var(--th-bg) 45%, transparent); }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+.concept {
+  border-bottom: 1px dotted var(--accent);
+  cursor: help;
+}
+.concept::after { content: "\2197"; font-size: 0.7em; vertical-align: super;
+  color: var(--accent); margin-left: 0.1em; }
+#to-top {
+  position: fixed; right: 1.5rem; bottom: 1.5rem; width: 2.6rem; height: 2.6rem;
+  border-radius: 50%; border: 1px solid var(--rule); background: var(--bg);
+  color: var(--accent); font-size: 1.1rem; cursor: pointer; display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+#to-top.show { display: block; }
+#to-top:hover { background: var(--accent-soft); }
+.section-pending {
+  color: var(--warn); background: var(--warn-soft);
+  border-left: 3px solid var(--warn); padding: 0.5rem 0.9rem;
+  border-radius: 0 4px 4px 0; margin: 1rem 0;
+}
+@media (max-width: 60rem) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  nav.toc { position: static; max-height: none; border-right: 0;
+            border-bottom: 1px solid var(--rule); }
+  main { padding-top: 1rem; }
+}
+@media print {
+  nav.toc, #to-top { display: none; }
+  .layout { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" data-for="en">
+  <div class="langs"><a href="#report-en" data-switch="en">English</a><a href="#report-pt" data-switch="pt">Português</a></div>
+  <div class="toc-title">Contents</div>
+  <ol>
+<li><a href="#1-purpose-and-audience">1. Purpose and audience</a></li>
+<ol>
+<li><a href="#a-note-on-the-age-bands">A note on the age bands</a></li>
+</ol>
+<li><a href="#2-executive-summary">2. Executive summary</a></li>
+<li><a href="#3-guided-tour-the-material-the-course-does-not-cover">3. Guided tour: the material the course does not cover</a></li>
+<ol>
+<li><a href="#3-1-macro-f1">3.1 Macro F1</a></li>
+<li><a href="#3-2-repeated-cross-validation">3.2 Repeated cross-validation</a></li>
+<li><a href="#3-3-paired-comparison-on-identical-folds">3.3 Paired comparison on identical folds</a></li>
+<li><a href="#3-4-pre-registration-of-a-decision-rule">3.4 Pre-registration of a decision rule</a></li>
+<li><a href="#3-5-selection-leakage-and-nested-selection">3.5 Selection leakage and nested selection</a></li>
+<li><a href="#3-6-mutual-information-with-a-shuffle-bias-correction">3.6 Mutual information with a shuffle bias correction</a></li>
+<li><a href="#3-7-permutation-importance-on-macro-f1">3.7 Permutation importance on macro F1</a></li>
+<li><a href="#3-8-spearman-rank-correlation">3.8 Spearman rank correlation</a></li>
+<li><a href="#3-9-ordinal-encoding-bias-in-tree-importances">3.9 Ordinal-encoding bias in tree importances</a></li>
+<li><a href="#3-10-histgradientboostingclassifier-and-passthrough">3.10 HistGradientBoostingClassifier and passthrough</a></li>
+<li><a href="#3-11-fingerprints-and-provenance">3.11 Fingerprints and provenance</a></li>
+</ol>
+<li><a href="#4-method-as-executed">4. Method as executed</a></li>
+<ol>
+<li><a href="#4-1-stages">4.1 Stages</a></li>
+<li><a href="#4-2-the-two-pre-registered-rules-verbatim">4.2 The two pre-registered rules, verbatim</a></li>
+<li><a href="#4-3-why-stage-5-mirrors-the-stage-3-winner">4.3 Why Stage 5 mirrors the Stage 3 winner</a></li>
+</ol>
+<li><a href="#5-results">5. Results</a></li>
+<ol>
+<li><a href="#5-1-baseline-and-the-k-sweep">5.1 Baseline and the K sweep</a></li>
+<li><a href="#5-2-the-stage-3-check">5.2 The Stage 3 check</a></li>
+<li><a href="#5-3-the-nested-check">5.3 The nested check</a></li>
+<li><a href="#5-4-per-class-behaviour-k40-against-the-baseline">5.4 Per-class behaviour, K=40 against the baseline</a></li>
+<li><a href="#5-5-the-shortlist">5.5 The shortlist</a></li>
+</ol>
+<li><a href="#6-interpretation">6. Interpretation</a></li>
+<ol>
+<li><a href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">6.1 Forty columns match the baseline in aggregate, but reshuffle per class</a></li>
+<li><a href="#6-2-k-60-is-the-best-mean-and-the-rule-rejected-it">6.2 K = 60 is the best mean and the rule rejected it</a></li>
+<li><a href="#6-3-the-stage-3-check-earned-its-cost">6.3 The Stage 3 check earned its cost</a></li>
+<li><a href="#6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable">6.4 Selection optimism is +0.0137, and the shortlist is unstable</a></li>
+<li><a href="#6-5-forty-eight-columns-actively-hurt">6.5 Forty-eight columns actively hurt</a></li>
+<li><a href="#6-6-importance-concentration-does-not-predict-sufficiency">6.6 Importance concentration does not predict sufficiency</a></li>
+</ol>
+<li><a href="#7-why-the-courses-own-methods-were-not-used">7. Why the course&#x27;s own methods were not used</a></li>
+<li><a href="#8-decisions-for-the-humans">8. Decisions for the humans</a></li>
+<li><a href="#9-limitations">9. Limitations</a></li>
+<li><a href="#10-reproduction">10. Reproduction</a></li>
+<li><a href="#appendix-a-what-reshuffle-per-class-means">Appendix A. What "reshuffle per class" means</a></li>
+</ol>
+</nav>
+<nav class="toc" data-for="pt" hidden>
+  <div class="langs"><a href="#report-en" data-switch="en">English</a><a href="#report-pt" data-switch="pt">Português</a></div>
+  <div class="toc-title">Contents</div>
+  <ol>
+<li><a href="#1-objetivo-e-público">1. Objetivo e público</a></li>
+<ol>
+<li><a href="#uma-nota-sobre-as-faixas-etárias">Uma nota sobre as faixas etárias</a></li>
+</ol>
+<li><a href="#2-sumário-executivo">2. Sumário executivo</a></li>
+<li><a href="#3-visita-guiada-a-matéria-que-o-curso-não-cobre">3. Visita guiada: a matéria que o curso não cobre</a></li>
+<ol>
+<li><a href="#3-1-f1-macro">3.1 F1 macro</a></li>
+<li><a href="#3-2-validação-cruzada-repetida">3.2 Validação cruzada repetida</a></li>
+<li><a href="#3-3-comparação-emparelhada-em-folds-idênticos">3.3 Comparação emparelhada em folds idênticos</a></li>
+<li><a href="#3-4-pré-registo-de-uma-regra-de-decisão">3.4 Pré-registo de uma regra de decisão</a></li>
+<li><a href="#3-5-fuga-de-seleção-e-seleção-aninhada">3.5 Fuga de seleção e seleção aninhada</a></li>
+<li><a href="#3-6-informação-mútua-com-correção-de-enviesamento-por-baralhamento">3.6 Informação mútua com correção de enviesamento por baralhamento</a></li>
+<li><a href="#3-7-importância-por-permutação-em-f1-macro">3.7 Importância por permutação em F1 macro</a></li>
+<li><a href="#3-8-correlação-de-ordem-de-spearman">3.8 Correlação de ordem de Spearman</a></li>
+<li><a href="#3-9-enviesamento-da-codificação-ordinal-nas-importâncias-de-árvores">3.9 Enviesamento da codificação ordinal nas importâncias de árvores</a></li>
+<li><a href="#3-10-histgradientboostingclassifier-e-passthrough">3.10 HistGradientBoostingClassifier e passthrough</a></li>
+<li><a href="#3-11-impressões-digitais-e-proveniência">3.11 Impressões digitais e proveniência</a></li>
+</ol>
+<li><a href="#4-método-tal-como-executado">4. Método tal como executado</a></li>
+<ol>
+<li><a href="#4-1-etapas">4.1 Etapas</a></li>
+<li><a href="#4-2-as-duas-regras-pré-registadas-à-letra">4.2 As duas regras pré-registadas, à letra</a></li>
+<li><a href="#4-3-porque-a-etapa-5-espelha-o-vencedor-da-etapa-3">4.3 Porque a Etapa 5 espelha o vencedor da Etapa 3</a></li>
+</ol>
+<li><a href="#5-resultados">5. Resultados</a></li>
+<ol>
+<li><a href="#5-1-linha-de-base-e-o-varrimento-de-k">5.1 Linha de base e o varrimento de K</a></li>
+<li><a href="#5-2-a-verificação-da-etapa-3">5.2 A verificação da Etapa 3</a></li>
+<li><a href="#5-3-a-verificação-aninhada">5.3 A verificação aninhada</a></li>
+<li><a href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">5.4 Comportamento por classe, K=40 contra a linha de base</a></li>
+<li><a href="#5-5-a-lista-final">5.5 A lista final</a></li>
+</ol>
+<li><a href="#6-interpretação">6. Interpretação</a></li>
+<ol>
+<li><a href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">6.1 Quarenta colunas igualam a linha de base em termos agregados, mas reorganizam por classe</a></li>
+<li><a href="#6-2-k-60-tem-a-melhor-média-e-a-regra-rejeitou-o">6.2 K = 60 tem a melhor média e a regra rejeitou-o</a></li>
+<li><a href="#6-3-a-verificação-da-etapa-3-compensou-o-seu-custo">6.3 A verificação da Etapa 3 compensou o seu custo</a></li>
+<li><a href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável">6.4 O otimismo de seleção é +0,0137, e a lista final é instável</a></li>
+<li><a href="#6-5-quarenta-e-oito-colunas-prejudicam-ativamente">6.5 Quarenta e oito colunas prejudicam ativamente</a></li>
+<li><a href="#6-6-a-concentração-de-importância-não-prevê-a-suficiência">6.6 A concentração de importância não prevê a suficiência</a></li>
+</ol>
+<li><a href="#7-porque-não-foram-usados-os-métodos-do-próprio-curso">7. Porque não foram usados os métodos do próprio curso</a></li>
+<li><a href="#8-decisões-para-os-humanos">8. Decisões para os humanos</a></li>
+<li><a href="#9-limitações">9. Limitações</a></li>
+<li><a href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A. O que significa "reorganizar por classe"</a></li>
+</ol>
+</nav>
+<main>
+
+<section class="report" id="report-en" data-lang="en">
+  <header class="report-header">
+    <h1>Feature selection for <code>AGE_RANGE</code> — stage report</h1>
+    <p class="subtitle">Internal stage report · English · source: <code>reports/02_feature_selection_stage.md</code></p>
+  </header>
+  <div class="section-pending"><strong>The Kaggle scores are pending.</strong> This report is marked pending on that point; see <a href="#6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable">&sect;6.4</a>.</div>
+  <div class="report-body">
+<p><strong>Prepared:</strong> 2026-11-04 <strong>Run:</strong> <code>c60f8f8</code>, working tree clean (<code>git_dirty: false</code>) <strong>Notebook:</strong> <code>notebooks/04_feature_selection.ipynb</code> <strong>Executed record:</strong> <code>outputs/04_feature_selection_executed.ipynb</code> <strong>Artifacts:</strong> <code>outputs/selected_features.json</code>, <code>outputs/feature_selection_k_sweep.csv</code>, <code>outputs/feature_selection_ranking.csv</code>, <code>outputs/feature_selection_ranking_deployed.csv</code></p>
+<hr />
+<h2 id="1-purpose-and-audience">1. Purpose and audience<a class="anchor" href="#1-purpose-and-audience" aria-label="link">#</a></h2>
+<p>This is an <strong>internal document</strong>. It is written for the people steering this project, not for the assessment. It is not a section of the 20-page report and it is not written to a rubric. Its job is to let a reader who knows the course material but not the extra material follow what this stage did, check that it was done honestly, and decide what to do next.</p>
+<p>The stage asked one question:</p>
+<blockquote>
+<p>Of the 255 input columns the model currently uses, how many can be removed before <a class="concept" href="#3-1-macro-f1" title="Explained in §3.1">macro F1</a> drops?</p>
+</blockquote>
+<p>The answer is that <strong>40 columns suffice</strong>: 40 of the 136 screened columns, down from 255 inputs (255 raw inputs expand to 1,170 columns after one-hot encoding). That answer comes with three qualifications that matter more than the number itself, and they are the substance of this document:</p>
+<ol type="1">
+<li>The aggregate score hides a per-class reshuffle (explained in <a class="xref" href="#appendix-a-what-reshuffle-per-class-means">Appendix A</a>; evidence in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>, interpretation in <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>).</li>
+<li>The best-scoring option was <strong>rejected by a rule</strong>, on a margin of 0.0002.</li>
+<li>Once you account for the cost of <em>choosing</em> the columns, the honest estimate is <strong>worse than using everything</strong>.</li>
+</ol>
+<p><a class="xref" href="#3-guided-tour-the-material-the-course-does-not-cover">§3</a> is a guided tour of the eleven concepts this stage uses that the course does not teach. Each concept is introduced at the point in the method where it is needed, in the order the notebook runs. A reader who follows <a class="xref" href="#3-guided-tour-the-material-the-course-does-not-cover">§3</a> can read sections 4–6 without further background.</p>
+<h3 id="a-note-on-the-age-bands">A note on the age bands<a class="anchor" href="#a-note-on-the-age-bands" aria-label="link">#</a></h3>
+<p>Every age interpretation in this document uses the official Kaggle mapping (<code>0 = 15–17, 1 = 18–19, …</code>). The data is ambiguous about band 0 and the question is open with the professor; see <code>TODO.md</code>. Nothing in this stage depends on the mapping, because the ranking treats labels as codes.</p>
+<hr />
+<h2 id="2-executive-summary">2. Executive summary<a class="anchor" href="#2-executive-summary" aria-label="link">#</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Finding</th>
+<th>Evidence</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>40 columns match the 255-column baseline <strong>in aggregate</strong>, but the per-class effect is a <a class="concept" href="#appendix-a-what-reshuffle-per-class-means" title="Explained in Appendix A">reshuffle</a>: 6 classes improve, 10 get worse.</td>
+<td>0.4519 ± 0.0104 vs 0.4531 ± 0.0096; mean per-class delta −0.0098</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><strong>K = 60 is the best mean and the rule rejected it</strong> on a 0.0002 miss. The rule, not the data, chose 40.</td>
+<td>0.4587, worst repeat −0.0102 against a −0.010 guard</td>
+<td>High</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>The Stage 3 check earned its cost: the ordinal ranking had <code>PC1A</code> 33rd, and it would have been dropped.</td>
+<td><a class="concept" href="#3-8-spearman-rank-correlation" title="Explained in §3.8">Spearman</a> 0.492; <code>PC1A</code> rank 33 → 1</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Selection optimism is <strong>+0.0137</strong>, and the shortlist is <strong>unstable</strong>: 26–40 of the 40 columns change per fold.</td>
+<td>Stage 4 0.4519 vs Stage 5 0.4382 ± 0.0133</td>
+<td>High</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><strong>48 of 136</strong> screened columns have negative <a class="concept" href="#3-7-permutation-importance-on-macro-f1" title="Explained in §3.7">permutation importance</a> — they actively hurt.</td>
+<td><code>feature_selection_ranking_deployed.csv</code></td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Importance concentration does not predict sufficiency: the top 10 carry 84% of importance, yet K = 20 fails by 1.6 points.</td>
+<td>K sweep</td>
+<td>High</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The one-line answer.</strong> 40 columns preserve the baseline's cross-validated score within noise, but <a class="concept" href="#6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable" title="Explained in §6.4">selection optimism</a> of +0.0137 puts the honest estimate at <strong>~0.438</strong>, which is <strong>below</strong> the 255-column baseline of 0.4531. Whether that gap is real is exactly what the two Kaggle scores will settle, because the test set never saw the selection. <strong>Those scores are not in yet; this document is marked pending on that point.</strong></p>
+<hr />
+<h2 id="3-guided-tour-the-material-the-course-does-not-cover">3. Guided tour: the material the course does not cover<a class="anchor" href="#3-guided-tour-the-material-the-course-does-not-cover" aria-label="link">#</a></h2>
+<p>The course covers feature selection rationale and wrapper/embedded methods (Aula2b 20–22), label vs one-hot encoding (Aula2b 24), permutation importance and MDI (PL_7 26–33), k-fold cross-validation (PL_2 39–48), and precision/recall/F1 (PL_2 14–27). Everything below is <strong>not</strong> in those decks. Each entry says what it is, why this stage needed it, and the trap it sets.</p>
+<h3 id="3-1-macro-f1">3.1 Macro F1<a class="anchor" href="#3-1-macro-f1" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> Plain F1 (PL_2 slide 26) is defined for two classes. With 16 classes you must choose how to combine 16 per-class F1 scores. <strong>Macro</strong> F1 is the unweighted mean of the 16 per-class scores. <strong>Weighted</strong> F1 weights each class by its support. <strong>Micro</strong> F1 is just accuracy for single-label problems.</p>
+<p><strong>Why it matters here.</strong> The competition scores macro F1, so every number in this document is macro F1. The difference is not cosmetic: band 0 has 207 rows (1.9%), band 10 has 1,062. Under macro averaging the 207-row band counts as much as the 1,062-row band, so a model that is good on the big bands and bad on the rare ones scores far worse under macro than under weighted or micro.</p>
+<p><strong>The trap.</strong> This is why the archived <code>data_v1</code> comparison is not comparable to this one. That archive measured <strong>accuracy</strong> and reported that top-20 lost 4.3 percentage points. Macro F1 weights the rare bands more heavily, so the same feature cut costs more under macro F1. Never put the 4.3-point figure next to a macro-F1 number.</p>
+<h3 id="3-2-repeated-cross-validation">3.2 Repeated cross-validation<a class="anchor" href="#3-2-repeated-cross-validation" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> The course teaches one pass of k-fold: partition the data into k folds, train k times, average the k scores. <strong>Repeated</strong> CV does that whole procedure R times with different random partitions. Here R = 3 and k = 5, giving <strong>15 folds</strong>.</p>
+<p><strong>Why it matters here.</strong> A single 5-fold pass gives you 5 numbers. Their standard deviation is an estimate of how much the score moves with the <em>split</em>, and with 5 numbers that estimate is itself very noisy. Repeating gives 15 numbers and a steadier estimate. Every "±" in this document is the standard deviation across those 15 folds.</p>
+<p><strong>The trap.</strong> The 15 folds are <strong>not independent</strong>. The three repeats score the same rows, just partitioned differently. So the standard deviation across folds is a <strong>descriptive</strong> spread, not a confidence interval. Do not compute "mean ± 2 SE" from it and do not treat it as a significance test. This is stated in the notebook for exactly this reason.</p>
+<h3 id="3-3-paired-comparison-on-identical-folds">3.3 Paired comparison on identical folds<a class="anchor" href="#3-3-paired-comparison-on-identical-folds" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> When comparing two models, compare them <strong>fold by fold on the same rows</strong>, not by comparing two means. For fold <em>i</em>, compute <code>baseline_i − candidate_i</code>; then look at the distribution of those differences.</p>
+<p><strong>Why it matters here.</strong> Two models scored on the same fold share the fold's difficulty. Fold 2 is hard for both; fold 4 is easy for both. Differencing cancels that shared component, so the <a class="concept" href="#3-3-paired-comparison-on-identical-folds" title="Explained in §3.3">paired difference</a> is much less noisy than the two raw scores. The K sweep's <code>paired_difference_mean</code> column is exactly this: baseline minus K, per fold, then averaged.</p>
+<p><strong>The trap.</strong> A paired difference near zero with a large spread is <em>not</em> evidence of equality. It is evidence of <strong>no detectable difference at this sample size</strong>. The distinction matters for finding 1: 40 columns were not shown to be as good as 255, only not shown to be worse.</p>
+<h3 id="3-4-pre-registration-of-a-decision-rule">3.4 Pre-registration of a decision rule<a class="anchor" href="#3-4-pre-registration-of-a-decision-rule" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> Write the decision rule down <strong>before</strong> seeing the result, then apply it mechanically. It is standard practice in research and it is not a course topic.</p>
+<p><strong>Why it matters here.</strong> The tempting failure mode is to run the sweep, see that K = 60 scores best, and then define "within noise" so that 60 passes. That would be choosing the rule to fit the answer. Two rules in this stage were fixed in advance and are quoted verbatim in <a class="xref" href="#4-method-as-executed">§4</a>.</p>
+<p><strong>The trap.</strong> Pre-registration does not make the rule <em>correct</em>; it makes it <strong>honest</strong>. A badly chosen rule applied mechanically is still a badly chosen rule. Finding 2 is exactly this case: the rule was followed, and the rule is arguably too sharp. Both statements belong in the record.</p>
+<h3 id="3-5-selection-leakage-and-nested-selection">3.5 Selection leakage and nested selection<a class="anchor" href="#3-5-selection-leakage-and-nested-selection" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> This is the most important idea in the stage and the course does not state it. Aula2b slide 20 says feature selection "reduces overfitting" and stops there. It never says that <strong>the act of selecting features using labels that later appear in a validation fold inflates the score you measure</strong>.</p>
+<p>The mechanism: Stages 1 and 2 look at the labels of <strong>every row</strong> to decide which columns are important. With 5-fold CV, every row is in some validation fold. So every row's label influenced the choice of columns, and then those same rows were used to score the model. The score is optimistic.</p>
+<p><strong>Why it matters here.</strong> The frozen folds protect the <em>preprocessor</em> from leaking — the scaler and encoder are fitted inside each fold. They do <strong>not</strong> protect you from looking at validation scores while choosing columns. That is a different leak, and it is invisible unless you go looking for it.</p>
+<p><strong>The fix — <a class="concept" href="#3-5-selection-leakage-and-nested-selection" title="Explained in §3.5">nested selection</a>.</strong> Run the <em>entire</em> selection procedure inside each outer fold:</p>
+<ol type="1">
+<li>Take the outer fold's training rows only.</li>
+<li>Carve a 20% inner holdout out of them.</li>
+<li>Run the mutual-information screen on the remaining 80%, fit the ranker there, and rank by permutation <strong>on the holdout</strong> — so the permutation is out-of-sample, exactly like Stage 2.</li>
+<li>Take the top K, fit the final model on the outer training rows, score on the outer validation fold.</li>
+</ol>
+<p><strong>The trap.</strong> If you fit the ranker on all outer training rows and then permute on a subset of them, the permutation is <strong>in-sample</strong>. That inflates high-cardinality columns and contaminates the gap you are trying to measure. The notebook uses a genuine holdout for this reason.</p>
+<h3 id="3-6-mutual-information-with-a-shuffle-bias-correction">3.6 Mutual information with a shuffle bias correction<a class="anchor" href="#3-6-mutual-information-with-a-shuffle-bias-correction" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> Mutual information (MI) measures how much knowing a column reduces uncertainty about the label. It detects non-linear dependence, unlike correlation. The course offers the <strong>chi-square</strong> test for feature/target dependence (Aula2b slide 21); MI is a different and more general tool.</p>
+<p><strong>Why it matters here.</strong> Stage 1 uses MI as a cheap first screen, cutting 255 inputs down to 136 candidate columns before the expensive permutation ranking.</p>
+<p><strong>The trap — MI is biased upward by cardinality.</strong> A column with many distinct values can appear informative by chance alone. The fix used here is to <strong>shuffle the labels</strong>, recompute MI, and subtract the shuffled value. What survives is signal above what random association produces. Without this correction MI systematically favours high-cardinality columns.</p>
+<h3 id="3-7-permutation-importance-on-macro-f1">3.7 Permutation importance on macro F1<a class="anchor" href="#3-7-permutation-importance-on-macro-f1" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> PL_7 slides 30–31 introduce permutation importance: shuffle one column, measure how much the score drops. The course demonstrates it on <strong>accuracy</strong>. Here the scorer is <strong>macro F1</strong>.</p>
+<p><strong>Why it matters here.</strong> The importance of a column is defined <em>relative to the metric</em>. Shuffling a column that matters only for the rare bands barely moves accuracy but moves macro F1 a lot. So this ranking answers "which columns matter for macro F1", which is the competition metric.</p>
+<p><strong>The trap — negative values are meaningful.</strong> A column whose importance is negative <em>improved</em> the score when shuffled, i.e. it was actively hurting on the validation folds. This is not a bug. <strong>48 of the 136 screened columns have negative importance</strong> (finding 5). They are real evidence that those columns carry noise the model was fitting.</p>
+<h3 id="3-8-spearman-rank-correlation">3.8 Spearman rank correlation<a class="anchor" href="#3-8-spearman-rank-correlation" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> A correlation between two <strong>rankings</strong>, not two values. It asks: when ranking A puts a column high, does ranking B also put it high? It ranges from −1 to +1 and ignores the magnitudes, only the order.</p>
+<p><strong>Why it matters here.</strong> Stage 3 compares two rankings of the same 20 columns produced by two different pipelines. Pearson correlation would be wrong — the importance values have wildly different scales (0.005 vs 0.174). Spearman only cares about order, which is what "do these two rankings agree" means.</p>
+<p><strong>The trap.</strong> Spearman 0.492 says the rankings <strong>disagree</strong>. It does not say which one is right. There is no ground truth for "the correct importance"; the only external check is the competition score.</p>
+<h3 id="3-9-ordinal-encoding-bias-in-tree-importances">3.9 Ordinal-encoding bias in tree importances<a class="anchor" href="#3-9-ordinal-encoding-bias-in-tree-importances" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> PL_7 says MDI is biased toward high-cardinality features. This is a <strong>different and sharper</strong> effect: a <strong>nominal</strong> column (no natural order) that is label-encoded gets an arbitrary numeric order. A tree must then make several splits to isolate a category that one-hot encoding would isolate in one.</p>
+<p><strong>Why it matters here.</strong> This is what <code>PC1A</code> demonstrated. Under ordinal codes the random forest ranked it <strong>33rd</strong> with importance 0.005. Under the deployed one-hot pipeline it ranks <strong>1st</strong> with importance 0.174 — a factor of 35. A 3-level nominal needs several splits under ordinal codes and one under one-hot, so the ordinal lens systematically underrates it.</p>
+<p><strong>The trap.</strong> Stage 3 changes <strong>two things at once</strong> — the model (RF → <code>hist_gb</code>) and the representation (ordinal → one-hot) — so the 0.492 cannot be blamed on the encoding alone. With n = 20 the error bars are wide. The conclusion is qualitative: the choice of representation changed the answer.</p>
+<h3 id="3-10-histgradientboostingclassifier-and-passthrough">3.10 <code>HistGradientBoostingClassifier</code> and <code>passthrough</code><a class="anchor" href="#3-10-histgradientboostingclassifier-and-passthrough" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> The course covers boosting and XGBoost (Aula5 slides 8–10). This stage uses scikit-learn's <code>HistGradientBoostingClassifier</code>, which histogram-bins continuous features for speed and handles missing values natively. <code>passthrough</code> means the preprocessor passes raw columns through untouched, letting the model do its own splitting rather than receiving pre-encoded columns.</p>
+<p><strong>Why it matters here.</strong> It is the model the group actually deploys, so the ranking must be produced by <em>this</em> model on <em>this</em> representation. Ranking with any other configuration measures that configuration, not the deployed one.</p>
+<p><strong>The trap.</strong> Native categorical handling means the model can see a nominal column as a category, not a number — which is precisely why it disagrees with the ordinal RF. The disagreement is a property of the pipeline, not an error in either ranking.</p>
+<h3 id="3-11-fingerprints-and-provenance">3.11 Fingerprints and provenance<a class="anchor" href="#3-11-fingerprints-and-provenance" aria-label="link">#</a></h3>
+<p><strong>What it is.</strong> A <a class="concept" href="#3-11-fingerprints-and-provenance" title="Explained in §3.11">fingerprint</a> is a hash of a set of column names (and of the target values). Provenance is the record of what produced an artifact: git SHA, whether the tree was dirty, the seed, the fold specification.</p>
+<p><strong>Why it matters here.</strong> <code>selected_features.json</code> stores both. The loader re-checks the fingerprint when the file is read: if the shortlist no longer matches the data, it <strong>fails loudly</strong> rather than silently dropping a column. A shortlist that has quietly stopped fitting the data is worse than no shortlist.</p>
+<p><strong>The trap.</strong> A fingerprint protects against <em>drift</em>, not against <em>error</em>. It confirms the columns are the ones that were chosen; it says nothing about whether choosing them was a good idea.</p>
+<hr />
+<h2 id="4-method-as-executed">4. Method as executed<a class="anchor" href="#4-method-as-executed" aria-label="link">#</a></h2>
+<h3 id="4-1-stages">4.1 Stages<a class="anchor" href="#4-1-stages" aria-label="link">#</a></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>What it does</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Baseline: <code>hist_gb</code> on all 255 inputs, 15 folds</td>
+<td>~5 min</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Mutual-information screen with shuffle correction: 255 → 136 columns</td>
+<td>fast</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>Permutation ranking of the 136, ordinal-coded RF, 5 repeats</td>
+<td>~28 min</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Representation consistency check: re-rank the top 20 with the deployed pipeline</td>
+<td>~5 min</td>
+</tr>
+<tr class="odd">
+<td>3b</td>
+<td><strong>Fallback, ran here:</strong> re-rank all 136 with <code>hist_gb</code> + <code>passthrough</code></td>
+<td>~30 min</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>K sweep over {10, 15, 20, 30, 40, 60, 80}, one model, paired against baseline</td>
+<td>~20 min</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Nested selection: the whole procedure redone inside each outer fold</td>
+<td>~22 min</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Persistence with fingerprints</td>
+<td>fast</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>Two submissions: selected K=40 and all features</td>
+<td>~15 min</td>
+</tr>
+</tbody>
+</table>
+<p>Total wall time was about 2 h 20 min, including the Stage 3 fallback.</p>
+<h3 id="4-2-the-two-pre-registered-rules-verbatim">4.2 The two pre-registered rules, verbatim<a class="anchor" href="#4-2-the-two-pre-registered-rules-verbatim" aria-label="link">#</a></h3>
+<p><strong>Stage 3 branch</strong> (fixed before the run; quoted from the notebook):</p>
+<blockquote>
+<p>If the correlation is high (&gt; 0.7), the ordinal lens is fine and the shortlist is built from the Stage 2 ranking. If it is low, the shortlist is built from the representation the model actually uses: the whole screened set is re-ranked with <code>hist_gb</code> + <code>passthrough</code>.</p>
+<p>This is a pre-registered branch, not a choice made after seeing the score. The only thing the number decides is <em>which ranking was already declared to win</em>.</p>
+</blockquote>
+<p><strong>Stage 4 pass rule</strong> (fixed before the run; quoted from the notebook):</p>
+<blockquote>
+<p>K passes if the mean paired difference over the folds is <strong>at most 0.005</strong> and no single repeat shows a loss worse than 0.010.</p>
+</blockquote>
+<p><strong>Pre-registered fallback:</strong> if no K passed, not even K = 80, the shortlist would be the full input set and the report would say selection did not survive validation. This did not trigger.</p>
+<h3 id="4-3-why-stage-5-mirrors-the-stage-3-winner">4.3 Why Stage 5 mirrors the Stage 3 winner<a class="anchor" href="#4-3-why-stage-5-mirrors-the-stage-3-winner" aria-label="link">#</a></h3>
+<p>Stage 5 uses the <strong>same ranker that produced the shortlist</strong>: the deployed <code>hist_gb</code> pipeline, because Stage 3 failed. If it had used the ordinal RF instead, the gap would measure <em>disagreement between two rankers</em> rather than <em>selection optimism</em>. Mirroring keeps the measurement clean.</p>
+<hr />
+<h2 id="5-results">5. Results<a class="anchor" href="#5-results" aria-label="link">#</a></h2>
+<h3 id="5-1-baseline-and-the-k-sweep">5.1 Baseline and the K sweep<a class="anchor" href="#5-1-baseline-and-the-k-sweep" aria-label="link">#</a></h3>
+<p>Baseline: <code>hist_gb</code> on all 255 inputs, <strong>0.4531 ± 0.0096</strong> (run <code>20261103T225840834739_hist-gb-all-recoded</code>).</p>
+<p>Paired difference is <strong>baseline minus K</strong>, so a positive number is a loss.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">macro F1</th>
+<th style="text-align: right;">std</th>
+<th style="text-align: right;">paired diff</th>
+<th style="text-align: right;">worst repeat</th>
+<th style="text-align: center;">passes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.4139</td>
+<td style="text-align: right;">0.0096</td>
+<td style="text-align: right;">+0.0392</td>
+<td style="text-align: right;">+0.0347</td>
+<td style="text-align: center;">no</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0.4294</td>
+<td style="text-align: right;">0.0093</td>
+<td style="text-align: right;">+0.0237</td>
+<td style="text-align: right;">+0.0199</td>
+<td style="text-align: center;">no</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0.4367</td>
+<td style="text-align: right;">0.0094</td>
+<td style="text-align: right;">+0.0164</td>
+<td style="text-align: right;">+0.0100</td>
+<td style="text-align: center;">no</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">0.4403</td>
+<td style="text-align: right;">0.0104</td>
+<td style="text-align: right;">+0.0128</td>
+<td style="text-align: right;">+0.0098</td>
+<td style="text-align: center;">no</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><strong>40</strong></td>
+<td style="text-align: right;"><strong>0.4519</strong></td>
+<td style="text-align: right;"><strong>0.0104</strong></td>
+<td style="text-align: right;"><strong>+0.0012</strong></td>
+<td style="text-align: right;"><strong>−0.0049</strong></td>
+<td style="text-align: center;"><strong>yes</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;"><strong>0.4587</strong></td>
+<td style="text-align: right;">0.0072</td>
+<td style="text-align: right;">−0.0056</td>
+<td style="text-align: right;"><strong>−0.0102</strong></td>
+<td style="text-align: center;">no</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">0.4574</td>
+<td style="text-align: right;">0.0090</td>
+<td style="text-align: right;">−0.0044</td>
+<td style="text-align: right;">−0.0070</td>
+<td style="text-align: center;">yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>K = 40 is the smallest set that passes the rule.</strong></p>
+<h3 id="5-2-the-stage-3-check">5.2 The Stage 3 check<a class="anchor" href="#5-2-the-stage-3-check" aria-label="link">#</a></h3>
+<p>Spearman correlation between the ordinal-RF and deployed rankings: <strong>0.492</strong>. Below 0.7, so the fallback ran and the shortlist comes from the deployed ranking (<code>ranking_source: stage3_deployed_hist_gb</code>).</p>
+<p>The single most consequential disagreement:</p>
+<table>
+<thead>
+<tr class="header">
+<th>column</th>
+<th style="text-align: right;">ordinal rank</th>
+<th style="text-align: right;">deployed rank</th>
+<th style="text-align: right;">ordinal importance</th>
+<th style="text-align: right;">deployed importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PC1A</code></td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: right;"><strong>0.174</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-3-the-nested-check">5.3 The nested check<a class="anchor" href="#5-3-the-nested-check" aria-label="link">#</a></h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">fold</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">macro F1</th>
+<th style="text-align: right;">columns differing from Stage 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0.4498</td>
+<td style="text-align: right;">26</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0.4278</td>
+<td style="text-align: right;">40</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0.4320</td>
+<td style="text-align: right;">34</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0.4551</td>
+<td style="text-align: right;">38</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0.4262</td>
+<td style="text-align: right;">38</td>
+</tr>
+</tbody>
+</table>
+<p>Stage 5 mean: <strong>0.4382 ± 0.0133</strong>. Stage 4 for the same K: 0.4519. <strong>Selection optimism: +0.0137.</strong></p>
+<h3 id="5-4-per-class-behaviour-k40-against-the-baseline">5.4 Per-class behaviour, K=40 against the baseline<a class="anchor" href="#5-4-per-class-behaviour-k40-against-the-baseline" aria-label="link">#</a></h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">band</th>
+<th style="text-align: right;">baseline F1</th>
+<th style="text-align: right;">K=40 F1</th>
+<th style="text-align: right;">delta</th>
+<th style="text-align: right;">support</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.857</td>
+<td style="text-align: right;">0.829</td>
+<td style="text-align: right;">−0.028</td>
+<td style="text-align: right;">207</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.308</td>
+<td style="text-align: right;"><strong>0.350</strong></td>
+<td style="text-align: right;"><strong>+0.041</strong></td>
+<td style="text-align: right;">172</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.601</td>
+<td style="text-align: right;">0.585</td>
+<td style="text-align: right;">−0.016</td>
+<td style="text-align: right;">399</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.373</td>
+<td style="text-align: right;"><strong>0.388</strong></td>
+<td style="text-align: right;"><strong>+0.015</strong></td>
+<td style="text-align: right;">377</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.259</td>
+<td style="text-align: right;"><strong>0.277</strong></td>
+<td style="text-align: right;"><strong>+0.018</strong></td>
+<td style="text-align: right;">449</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.347</td>
+<td style="text-align: right;">0.344</td>
+<td style="text-align: right;">−0.003</td>
+<td style="text-align: right;">647</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.358</td>
+<td style="text-align: right;">0.340</td>
+<td style="text-align: right;">−0.018</td>
+<td style="text-align: right;">859</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.389</td>
+<td style="text-align: right;"><strong>0.401</strong></td>
+<td style="text-align: right;"><strong>+0.013</strong></td>
+<td style="text-align: right;">862</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.634</td>
+<td style="text-align: right;">0.621</td>
+<td style="text-align: right;">−0.013</td>
+<td style="text-align: right;">905</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.635</td>
+<td style="text-align: right;">−0.026</td>
+<td style="text-align: right;">1014</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.645</td>
+<td style="text-align: right;">0.619</td>
+<td style="text-align: right;">−0.026</td>
+<td style="text-align: right;">1062</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">0.514</td>
+<td style="text-align: right;"><strong>0.516</strong></td>
+<td style="text-align: right;"><strong>+0.002</strong></td>
+<td style="text-align: right;">1040</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0.380</td>
+<td style="text-align: right;">0.353</td>
+<td style="text-align: right;">−0.027</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0.280</td>
+<td style="text-align: right;">0.252</td>
+<td style="text-align: right;">−0.028</td>
+<td style="text-align: right;">823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">0.313</td>
+<td style="text-align: right;"><strong>0.314</strong></td>
+<td style="text-align: right;"><strong>+0.001</strong></td>
+<td style="text-align: right;">650</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0.449</td>
+<td style="text-align: right;">0.387</td>
+<td style="text-align: right;"><strong>−0.063</strong></td>
+<td style="text-align: right;">496</td>
+</tr>
+</tbody>
+</table>
+<p><strong>6 classes improve, 10 get worse, mean delta −0.0098.</strong></p>
+<h3 id="5-5-the-shortlist">5.5 The shortlist<a class="anchor" href="#5-5-the-shortlist" aria-label="link">#</a></h3>
+<p>40 columns, in deployed rank order:</p>
+<p><code>PC1A</code>, <code>MAINSTAT</code>, <code>HH_INACT</code>, <code>MARSTALEGAL</code>, <code>HATLEVEL</code>, <code>PARTNERS</code>, <code>HH_ACT</code>, <code>PA7_NAC</code>, <code>HHTYPE</code>, <code>HHNBPERS_0_13_COD</code>, <code>IN45</code>, <code>HHNBPERS_COD</code>, <code>JOBSTAT_COD</code>, <code>NT1</code>, <code>IN47</code>, <code>BM2</code>, <code>PA1</code>, <code>IN63</code>, <code>HA2</code>, <code>HHINCOME</code>, <code>FT_PT</code>, <code>BM1</code>, <code>IN65</code>, <code>PA5</code>, <code>PE9</code>, <code>PL9_tot</code>, <code>IN4</code>, <code>IN24</code>, <code>IN28</code>, <code>IN15</code>, <code>MD1</code>, <code>SK2</code>, <code>IN16</code>, <code>PC2</code>, <code>DH6</code>, <code>HA1G</code>, <code>JOBISCO_COD</code>, <code>PL5</code>, <code>AM3</code>, <code>IN22</code></p>
+<p>By theme:</p>
+<ul>
+<li><strong>Labour status and job</strong> — <code>MAINSTAT</code>, <code>JOBSTAT_COD</code>, <code>JOBISCO_COD</code>, <code>FT_PT</code>, <code>HH_ACT</code>, <code>HH_INACT</code></li>
+<li><strong>Education</strong> — <code>HATLEVEL</code>, <code>PE9</code>, <code>NT1</code></li>
+<li><strong>Household structure</strong> — <code>HHTYPE</code>, <code>HHNBPERS_COD</code>, <code>HHNBPERS_0_13_COD</code>, <code>PARTNERS</code>, <code>MARSTALEGAL</code></li>
+<li><strong>Income and wealth</strong> — <code>HHINCOME</code>, <code>PL9_tot</code>, <code>PL5</code>, <code>MD1</code></li>
+<li><strong>Health and disability</strong> — <code>HA2</code>, <code>HA1G</code>, <code>DH6</code></li>
+<li><strong>Migration and nationality</strong> — <code>PA7_NAC</code>, <code>PA1</code>, <code>PA5</code>, <code>BM1</code>, <code>BM2</code></li>
+<li><strong>Region</strong> — <code>PC1A</code>, <code>PC2</code></li>
+<li><strong>Attitudes and opinions</strong> — 10 of the 40 are <code>IN*</code> columns</li>
+</ul>
+<p><strong>Blocks never selected:</strong> <code>CD*</code> (9 columns), <code>AL*</code> (4), <code>HS*</code> (3), <code>AW*</code> (2), <code>HO*</code> (2), <code>PN*</code> (2), <code>UN*</code> (2), <code>LOCNACE</code> (1). These carry no permutation signal for this target.</p>
+<hr />
+<h2 id="6-interpretation">6. Interpretation<a class="anchor" href="#6-interpretation" aria-label="link">#</a></h2>
+<h3 id="6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">6.1 Forty columns match the baseline in aggregate, but reshuffle per class<a class="anchor" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class" aria-label="link">#</a></h3>
+<p>The aggregate difference is +0.0012, about an eighth of a standard deviation. The honest reading is <strong>"no detectable loss"</strong>, not "40 columns are as good as 255".</p>
+<p>But the per-class table shows this is not a neutral cut. Six classes improve — mostly the sparse middle bands (1, 3, 4, 7) — and ten get worse, including the well-populated bands 9, 10 and 12 and, worst of all, <strong>band 15 at −0.063</strong>. The 40-column model is not the 255-column model with less noise; it is a <strong>different</strong> model that trades some classes for others and happens to land at the same mean. <a class="xref" href="#appendix-a-what-reshuffle-per-class-means">Appendix A</a> spells out what "reshuffle" means and why the mean can stay flat while this happens.</p>
+<p>That matters for the project's stated goal. The assignment asks the model's predictions to be used to detect profile anomalies, which needs the middle bands to be well separated. A cut that improves bands 1 and 4 while losing band 15 is not obviously the right trade for that purpose, even though macro F1 cannot tell the difference.</p>
+<h3 id="6-2-k-60-is-the-best-mean-and-the-rule-rejected-it">6.2 K = 60 is the best mean and the rule rejected it<a class="anchor" href="#6-2-k-60-is-the-best-mean-and-the-rule-rejected-it" aria-label="link">#</a></h3>
+<p>K = 60 scores <strong>0.4587</strong>, better than the baseline on the mean and better than K = 40. It fails the guard by <strong>0.0002</strong> (−0.0102 against a −0.010 threshold).</p>
+<p>Two things are true at once and both belong in the record:</p>
+<ul>
+<li><strong>The rule was fixed in advance and was followed.</strong> That is the point of <a class="concept" href="#3-4-pre-registration-of-a-decision-rule" title="Explained in §3.4">pre-registration</a>, and the guard did exactly what it was designed to do.</li>
+<li><strong>The guard is a knife-edge at this sample size.</strong> A 0.0002 miss is noise, not evidence of instability. K = 60 is <em>plausibly</em> the better operating point, and the rule — not the data — is what chose 40.</li>
+</ul>
+<p>The sweep also shows <strong>K = 80 passing</strong> (0.4574, diff −0.0044) while K = 60 fails. That non-monotonicity is a warning: the guard is partly measuring fold noise, not only model quality. A rule that rejects 60 but accepts 80 is not tracking a real threshold.</p>
+<p><strong>This is a decision for the humans, not a settled result.</strong> Options are set out in <a class="xref" href="#8-decisions-for-the-humans">§8</a>.</p>
+<h3 id="6-3-the-stage-3-check-earned-its-cost">6.3 The Stage 3 check earned its cost<a class="anchor" href="#6-3-the-stage-3-check-earned-its-cost" aria-label="link">#</a></h3>
+<p>The ordinal RF ranked <code>PC1A</code> 33rd, with importance 0.0021; the deployed pipeline ranks it 1st, with importance 0.1741 — an <strong>82× increase</strong>. Had the check passed, <code>PC1A</code> would have been <strong>dropped from the shortlist</strong>, and it is the single most important column under the model the group ships.</p>
+<p>The methodological lesson is the reusable part: <strong>rank features with the representation the model uses, or your ranking measures your encoding, not your data.</strong> The ordinal lens was not wrong in a way that showed up as an error; it was wrong in a way that silently reordered the answer.</p>
+<p>Caveat: the check changes model and representation together, so 0.492 cannot be attributed to encoding alone, and n = 20 is a wide error bar.</p>
+<h3 id="6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable">6.4 Selection optimism is +0.0137, and the shortlist is unstable<a class="anchor" href="#6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable" aria-label="link">#</a></h3>
+<p>Stage 4 says 0.4519. Stage 5 — the same procedure with selection redone inside each fold — says <strong>0.4382</strong>. Roughly <strong>1.4 points of the apparent score were bought by looking at the labels</strong>.</p>
+<p>The per-fold column counts are the sharper finding: <strong>26 to 40 of the 40 columns change in every fold, and in one fold all 40 change.</strong> The exact shortlist is not a stable object. What Stage 5 measures is the <strong>procedure</strong>, not the list.</p>
+<p><strong>The uncomfortable consequence:</strong> the honest estimate of ~0.438 is <strong>below</strong> the 255-column baseline of 0.4531. On this evidence the defensible claim is not "40 columns match the baseline" but:</p>
+<blockquote>
+<p>40 columns match the baseline's cross-validated score, but once the cost of choosing them is accounted for, the procedure may be slightly worse than using everything.</p>
+</blockquote>
+<p>Whether that gap is real is unresolved. The cross-validated estimate is optimistic for the selected set and not for the baseline, so the two numbers are not directly comparable — but the test set never saw the selection, so the two Kaggle scores are the clean comparison. <strong>They are pending.</strong></p>
+<h3 id="6-5-forty-eight-columns-actively-hurt">6.5 Forty-eight columns actively hurt<a class="anchor" href="#6-5-forty-eight-columns-actively-hurt" aria-label="link">#</a></h3>
+<p>48 of 136 screened columns have <strong>negative</strong> permutation importance: shuffling them <em>improved</em> macro F1 on the validation folds. This is stronger than "the rest are unimportant" — it says the model was fitting noise through those columns.</p>
+<p>This is direct evidence for the course's own claim (Aula2b slide 20) that removing unimportant features reduces overfitting. It is also a lead: a model trained on the 88 non-negative columns might beat both the 40 and the 255.</p>
+<h3 id="6-6-importance-concentration-does-not-predict-sufficiency">6.6 Importance concentration does not predict sufficiency<a class="anchor" href="#6-6-importance-concentration-does-not-predict-sufficiency" aria-label="link">#</a></h3>
+<p>The top 10 columns carry <strong>84%</strong> of total importance, and the top 20 carry <strong>95%</strong> — yet K = 20 fails the rule by 1.6 points. Importance concentration and model sufficiency are different questions. A column can matter greatly and still be redundant with another: permutation importance splits credit among correlated columns, so a column can look weak while its group is essential.</p>
+<p>This is the same warning the notebook records about <code>HA1*</code>/<code>PC1*</code>: their plain "not applicable" level is 100% for under-55 and 0% for 55+, so one split at 55 captures all of them. They are <strong>one age-eligibility signal, not thirteen health findings</strong>. Report themes, not thirteen discoveries.</p>
+<hr />
+<h2 id="7-why-the-courses-own-methods-were-not-used">7. Why the course's own methods were not used<a class="anchor" href="#7-why-the-courses-own-methods-were-not-used" aria-label="link">#</a></h2>
+<p>This section exists because the course offers several feature-selection techniques and this stage used others. Every departure is deliberate, and a reader who knows only the course material is entitled to ask why.</p>
+<p>The taxonomy from Aula2b slide 22 is the frame: <strong>filters</strong> score each feature against the target without a model (chi-square); <strong>wrappers</strong> use a model and measure how much performance drops without the feature (SFS, SBE); <strong>embedded</strong> methods select as they train (LASSO, tree impurity). This stage is <strong>filter then wrapper</strong> — <a class="concept" href="#3-6-mutual-information-with-a-shuffle-bias-correction" title="Explained in §3.6">mutual information</a> screens 255 → 136, permutation importance ranks those 136.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Course method</th>
+<th>Where</th>
+<th>Why not used</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Chi-square test</strong></td>
+<td>Aula2b 21</td>
+<td>Univariate and categorical-only. Would require binning the 31 numeric columns, which loses information. MI handles mixed types uniformly and adds a shuffle bias correction.</td>
+<td><strong>Defensible alternative.</strong> Chi-square would have been a reasonable choice; MI was preferred, not required.</td>
+</tr>
+<tr class="even">
+<td><strong>Remove low-std / skewed / highly-correlated</strong></td>
+<td>Aula2b 21</td>
+<td>These are hygiene rules, not target-aware selection. They answer "is this column well-behaved", not "does it predict age".</td>
+<td>Applied implicitly by the recoding; not used as the selection criterion.</td>
+</tr>
+<tr class="odd">
+<td><strong>Wrapper SFS / SBE</strong></td>
+<td>Aula2b 22</td>
+<td>Combinatorial search over 136 columns × 15 folds is infeasible.</td>
+<td><strong>Substituted, not skipped.</strong> Permutation importance is the tractable wrapper: it measures usefulness by classifier performance, which is the slide's own definition.</td>
+</tr>
+<tr class="even">
+<td><strong>Embedded / LASSO</strong></td>
+<td>Aula2b 22</td>
+<td>L1 over 1,170 one-hot columns with 16 classes is unstable, and the selection would be linear.</td>
+<td>Not used. Would need its own validation.</td>
+</tr>
+<tr class="odd">
+<td><strong>PCA</strong></td>
+<td>Aula2b 22</td>
+<td>Destroys interpretability, which the assignment explicitly requires ("analyze the factors that contribute the most").</td>
+<td>Rejected on requirement grounds, not performance.</td>
+</tr>
+<tr class="even">
+<td><strong>Permutation importance</strong></td>
+<td>PL_7 27–31</td>
+<td>—</td>
+<td><strong>Used.</strong> This is the core of the method.</td>
+</tr>
+<tr class="odd">
+<td><strong>Tree impurity (MDI)</strong></td>
+<td>PL_7 30</td>
+<td>Biased toward high-cardinality columns; in-sample.</td>
+<td>Used only as the RF's internal ranking in Stage 2, then superseded.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The honest summary.</strong> The core — rank features by the permutation importance of a model's macro F1 — is PL_7 plus Aula2b slide 22. The extensions are the validation discipline around it: repeated CV, paired comparison, a pre-registered rule, and nested selection.</p>
+<p>The one genuine departure is <strong>nested selection</strong>, and it exists to <em>test</em> the lecture's claim (Aula2b slide 20) that removing unimportant features reduces overfitting. The result is that the claim is <strong>conditional</strong>: the apparent gain is partly bought by looking at labels. That is a contribution to the course's argument, not a deviation from it. <a class="xref" href="#6-5-forty-eight-columns-actively-hurt">§6.5</a> is the other half of the same test — 48 columns with negative importance are direct evidence <em>for</em> the slide.</p>
+<hr />
+<h2 id="8-decisions-for-the-humans">8. Decisions for the humans<a class="anchor" href="#8-decisions-for-the-humans" aria-label="link">#</a></h2>
+<p>These are open. This stage informs them; it does not settle them.</p>
+<p><strong>D1. Which K to ship: 40 or 60?</strong> The rule chose 40. The mean favours 60. A defensible middle path is to submit both to Kaggle and let the test set decide, which costs two of the three daily submissions. <strong>Recommendation:</strong> submit K=40 and the all-features model first (both already built), then K=60 if the daily budget allows.</p>
+<p><strong>D2. Is the selection worth keeping at all?</strong> If the Kaggle score for K=40 is not at least as good as all-features, the honest conclusion is that selection did not survive validation, and the group should ship the full model. This was the pre-registered fallback for the <em>rule</em>; it is now a live question for the <em>test set</em>.</p>
+<p><strong>D3. Should the guard be changed?</strong> The −0.010 per-repeat guard rejected 60 and accepted 80. If the group wants to keep using a guard, it should be re-derived — for example from the observed repeat-to-repeat spread rather than a round number. Changing it now would be post-hoc, so any change must be declared for the <em>next</em> stage, not retrofitted.</p>
+<p><strong>D4. What to do with the 48 negative-importance columns?</strong> A run on the 88 non-negative columns is cheap and is a genuine hypothesis, not a fishing expedition, because the sign was measured out-of-sample on the validation folds.</p>
+<p><strong>D5. The <code>IN*</code> attitude columns.</strong> 10 of the 40 selected columns are attitudes and opinions. They rank high under <code>hist_gb</code> and low under the ordinal RF. That is either real signal or the same representation artifact. <strong>Do not build a narrative on them</strong> until someone checks what those columns mean and whether the effect survives a different representation.</p>
+<hr />
+<h2 id="9-limitations">9. Limitations<a class="anchor" href="#9-limitations" aria-label="link">#</a></h2>
+<ol type="1">
+<li><strong>The Kaggle scores are pending.</strong> The central claim in 6.4 is unresolved without them. Everything else is cross-validated evidence only.</li>
+<li><strong>The nested check uses 5 outer folds and one inner split per fold.</strong> The optimism estimate is itself noisy; ±0.0133 across folds.</li>
+<li><strong>The 15 folds are not independent</strong>, so no significance test is computed and none should be.</li>
+<li><strong>The Stage 3 check is confounded</strong> by design (model and representation change together) and uses n = 20.</li>
+<li><strong>The band-0 mapping is disputed</strong> (<code>TODO.md</code>). No result here depends on it, because labels are treated as codes, but no age interpretation should be published without the caveat.</li>
+<li><strong><code>reports/01</code>'s stored outputs are from <code>data_v1</code></strong> and measured accuracy, not macro F1. They are not comparable and are not used here.</li>
+<li><strong>Permutation importance splits credit among correlated columns.</strong> A single member of a correlated group can look weak while the group is essential. This is why <a class="xref" href="#6-6-importance-concentration-does-not-predict-sufficiency">§6.6</a> reports themes.</li>
+<li><strong>Nothing here is causal.</strong> <code>HATLEVEL</code> ranking high does not mean education causes age band; both reflect life stage.</li>
+</ol>
+<hr />
+<h2 id="appendix-a-what-reshuffle-per-class-means">Appendix A. What "reshuffle per class" means<a class="anchor" href="#appendix-a-what-reshuffle-per-class-means" aria-label="link">#</a></h2>
+<p>This appendix exists because the phrase is used in <a class="xref" href="#1-purpose-and-audience">§1</a>, <a class="xref" href="#2-executive-summary">§2</a> (finding 1) and <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>, and the report never defines it. It is a reading aid for the table in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>; it adds no new evidence.</p>
+<p><strong>The one-sentence definition.</strong> A <em>reshuffle</em> means the 40-column model and the 255-column model score <strong>about the same on average</strong>, but they are not the same on average <strong>class by class</strong>: the 40-column model wins on some bands and loses on others, and the wins and losses roughly cancel out.</p>
+<p><strong>Why a flat mean can hide it.</strong> <a class="xref" href="#3-1-macro-f1">Macro F1</a> is the plain average of 16 per-class F1 scores, and an average throws away the individual values. Two models can share a mean while having completely different per-class profiles: one can be better on the rare bands and worse on the common ones, or vice versa. The aggregate number only tells you where the average lands, not which classes it was built from. That is why the report says the aggregate <em>hides</em> the reshuffle rather than <em>contradicting</em> it.</p>
+<p><strong>How to read the table in <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>.</strong> Each row is one age band. The <code>delta</code> column is <code>K=40 F1 − baseline F1</code>: negative means the 40-column model is worse on that band, positive means better. The <code>support</code> column is how many rows of the data belong to that band. Two numbers matter:</p>
+<ul>
+<li><strong>6 classes are positive, 10 are negative</strong>, so the two models disagree on 16 of 16 bands — none is exactly tied.</li>
+<li><strong>The mean delta is −0.0098</strong>, i.e. the average of the 16 deltas, which is the same thing as (K=40 macro F1 − baseline macro F1) up to rounding. It is close to zero, which is exactly the "no detectable loss" of <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>.</li>
+</ul>
+<p><strong>A worked example from the table.</strong> Band 1 gains +0.041 and band 4 gains +0.018, while band 15 loses −0.063 and bands 9 and 10 lose −0.026 each. If you only looked at the aggregate, you would conclude "the cut cost nothing". Reading the rows tells you the cut <em>moved</em> performance from some bands to others. Since macro F1 weights every band equally regardless of support, a gain on a 172-row band and a loss on a 496-row band count the same in the mean — which is why the reshuffle is invisible in the aggregate but visible per class.</p>
+<p><strong>One number does not add up.</strong> The 16 deltas in the table sum to −0.158, so their average is −0.0099, not the −0.0098 stated in <a class="xref" href="#2-executive-summary">§2</a> and <a class="xref" href="#5-4-per-class-behaviour-k40-against-the-baseline">§5.4</a>. The gap is rounding: each delta is shown to three decimals, so the mean carries an error of about ±0.0002. The difference is not material, but the figure should be read as "about −0.0099".</p>
+<p><strong>Why it is not the same as "the model got worse".</strong> A loss would be a uniform downward shift in every row. A reshuffle is a <em>redistribution</em>: some rows up, some down, net roughly zero. The distinction matters for <a class="xref" href="#6-1-forty-columns-match-the-baseline-in-aggregate-but-reshuffle-per-class">§6.1</a>'s argument: the project needs the middle bands separated (for profile-anomaly detection), so a redistribution that costs band 15 is a real cost even when the mean is flat.</p>
+<p><strong>What it does not mean.</strong> It is not a statistical claim that the two models are equivalent, and it is not a claim that the per-class differences are significant — the folds are not independent (<a class="xref" href="#3-2-repeated-cross-validation">§3.2</a>, limitation 3 in <a class="xref" href="#9-limitations">§9</a>), so no significance test is run. It is a description of the table.</p>
+<hr />
+<h2 id="10-reproduction">10. Reproduction<a class="anchor" href="#10-reproduction" aria-label="link">#</a></h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From the repo root, on c60f8f8 with a clean tree:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/jupyter</span> nbconvert <span class="at">--to</span> notebook <span class="at">--execute</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  notebooks/04_feature_selection.ipynb <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/opencode <span class="at">--output</span> 04_executed.ipynb <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ExecutePreprocessor.timeout</span><span class="op">=</span>14400</span></code></pre></div>
+<p>The tracked notebook runs in smoke mode by default (<code>SMOKE = True</code>, ~14 min, numbers meaningless). For the real run, set <code>SMOKE = False</code> in a copy and execute that; the artifacts land in <code>outputs/</code> regardless, because the paths come from <code>daa.config</code>.</p>
+<p>Artifacts written:</p>
+<table>
+<thead>
+<tr class="header">
+<th>file</th>
+<th>contents</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>outputs/selected_features.json</code></td>
+<td>the 40-column shortlist, fingerprints, provenance</td>
+</tr>
+<tr class="even">
+<td><code>outputs/feature_selection_k_sweep.csv</code></td>
+<td>K, macro F1, paired diff, pass flag, run id</td>
+</tr>
+<tr class="odd">
+<td><code>outputs/feature_selection_ranking.csv</code></td>
+<td>Stage 2 ordinal-RF ranking, all 136</td>
+</tr>
+<tr class="even">
+<td><code>outputs/feature_selection_ranking_deployed.csv</code></td>
+<td>deployed <code>hist_gb</code> ranking, all 136</td>
+</tr>
+<tr class="odd">
+<td><code>outputs/submission_selected_k40.csv</code></td>
+<td>submission, K=40</td>
+</tr>
+<tr class="even">
+<td><code>outputs/submission_all_features.csv</code></td>
+<td>submission, all 255 inputs</td>
+</tr>
+</tbody>
+</table>
+<p>Both submissions validated: 3,655 rows, <code>RowId</code> 0…3654, 16 classes.</p>
+<p><strong>Pending:</strong> upload both to Kaggle and record the two macro-F1 scores. That is the only remaining evidence needed to close <a class="xref" href="#6-4-selection-optimism-is-0-0137-and-the-shortlist-is-unstable">§6.4</a>.</p>
+
+  </div>
+</section>
+
+<section class="report" id="report-pt" data-lang="pt" hidden>
+  <header class="report-header">
+    <h1>Seleção de variáveis para <code>AGE_RANGE</code> — relatório de etapa</h1>
+    <p class="subtitle">Relatório interno de etapa · Português · source: <code>reports/02_selecao_de_variaveis_pt.md</code></p>
+  </header>
+  <div class="section-pending"><strong>As pontuações do Kaggle estão pendentes.</strong> Este relatório está marcado como pendente nesse ponto; ver <a href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável">&sect;6.4</a>.</div>
+  <div class="report-body">
+<p><strong>Preparado em:</strong> 2026-11-04 <strong>Execução:</strong> <code>c60f8f8</code>, árvore de trabalho limpa (<code>git_dirty: false</code>) <strong>Notebook:</strong> <code>notebooks/04_feature_selection.ipynb</code> <strong>Registo da execução:</strong> <code>outputs/04_feature_selection_executed.ipynb</code> <strong>Artefactos:</strong> <code>outputs/selected_features.json</code>, <code>outputs/feature_selection_k_sweep.csv</code>, <code>outputs/feature_selection_ranking.csv</code>, <code>outputs/feature_selection_ranking_deployed.csv</code></p>
+<hr />
+<h2 id="1-objetivo-e-público">1. Objetivo e público<a class="anchor" href="#1-objetivo-e-público" aria-label="link">#</a></h2>
+<p>Este é um <strong>documento interno</strong>. Está escrito para as pessoas que orientam este projeto, não para a avaliação. Não é uma secção do relatório de 20 páginas e não foi escrito a pensar numa grelha de correção. O seu papel é permitir que um leitor que conhece a matéria do curso mas não o material adicional consiga acompanhar o que esta etapa fez, verificar que foi feita com honestidade, e decidir o que fazer a seguir.</p>
+<p>A etapa colocou uma única questão:</p>
+<blockquote>
+<p>Das 255 colunas de entrada que o modelo usa atualmente, quantas podem ser removidas antes de o <a class="concept" href="#3-1-f1-macro" title="Explained in §3.1">F1 macro</a> cair?</p>
+</blockquote>
+<p>A resposta é que <strong>bastam 40 colunas</strong>: 40 das 136 colunas pré-selecionadas, em vez das 255 entradas (as 255 entradas originais expandem-se para 1.170 colunas depois da codificação one-hot). Essa resposta vem com três ressalvas que importam mais do que o número em si, e são a substância deste documento:</p>
+<ol type="1">
+<li>A pontuação agregada esconde uma reorganização por classe (explicada no <a class="xref" href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A</a>; evidência no <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>, interpretação no <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>).</li>
+<li>A opção com melhor pontuação foi <strong>rejeitada por uma regra</strong>, por uma margem de 0,0002.</li>
+<li>Quando se contabiliza o custo de <em>escolher</em> as colunas, a estimativa honesta é <strong>pior do que usar tudo</strong>.</li>
+</ol>
+<p>A <a class="xref" href="#3-visita-guiada-a-matéria-que-o-curso-não-cobre">§3</a> é uma visita guiada aos onze conceitos que esta etapa usa e que o curso não ensina. Cada conceito é introduzido no ponto do método em que é necessário, pela ordem de execução do notebook. Um leitor que siga a <a class="xref" href="#3-visita-guiada-a-matéria-que-o-curso-não-cobre">§3</a> consegue ler as secções 4 a 6 sem mais enquadramento.</p>
+<h3 id="uma-nota-sobre-as-faixas-etárias">Uma nota sobre as faixas etárias<a class="anchor" href="#uma-nota-sobre-as-faixas-etárias" aria-label="link">#</a></h3>
+<p>Todas as interpretações de idade neste documento usam o mapeamento oficial do Kaggle (<code>0 = 15–17, 1 = 18–19, …</code>). Os dados são ambíguos quanto à faixa 0 e a questão está em aberto com o professor; ver <code>TODO.md</code>. Nada nesta etapa depende do mapeamento, porque a ordenação trata os rótulos como códigos.</p>
+<hr />
+<h2 id="2-sumário-executivo">2. Sumário executivo<a class="anchor" href="#2-sumário-executivo" aria-label="link">#</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Constatação</th>
+<th>Evidência</th>
+<th>Confiança</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>40 colunas igualam a linha de base de 255 colunas <strong>em termos agregados</strong>, mas o efeito por classe é uma <a class="concept" href="#apêndice-a-o-que-significa-reorganizar-por-classe" title="Explicado no Apêndice A">reorganização</a>: 6 classes melhoram, 10 pioram.</td>
+<td>0,4519 ± 0,0104 vs. 0,4531 ± 0,0096; delta médio por classe −0,0098</td>
+<td>Alta</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><strong>K = 60 tem a melhor média e a regra rejeitou-o</strong> por uma diferença de 0,0002. Foi a regra, e não os dados, que escolheu 40.</td>
+<td>0,4587, pior repetição −0,0102 contra uma guarda de −0,010</td>
+<td>Alta</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>A verificação da Etapa 3 compensou o seu custo: a ordenação ordinal colocava <code>PC1A</code> em 33.º, e a coluna teria sido descartada.</td>
+<td><a class="concept" href="#3-8-correlação-de-ordem-de-spearman" title="Explained in §3.8">Spearman</a> 0,492; <code>PC1A</code> passou da posição 33 para a 1</td>
+<td>Alta</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>O <a class="concept" href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável" title="Explained in §6.4">otimismo de seleção</a> é <strong>+0,0137</strong>, e a lista final é <strong>instável</strong>: 26 a 40 das 40 colunas mudam por fold.</td>
+<td>Etapa 4 0,4519 vs. Etapa 5 0,4382 ± 0,0133</td>
+<td>Alta</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><strong>48 de 136</strong> colunas pré-selecionadas têm <a class="concept" href="#3-7-importância-por-permutação-em-f1-macro" title="Explained in §3.7">importância por permutação</a> negativa — prejudicam ativamente.</td>
+<td><code>feature_selection_ranking_deployed.csv</code></td>
+<td>Alta</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>A concentração de importância não prevê a suficiência: as 10 primeiras colunas concentram 84% da importância, mas K = 20 falha por 1,6 pontos.</td>
+<td>Varrimento de K</td>
+<td>Alta</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A resposta numa linha.</strong> 40 colunas preservam a pontuação validada cruzada da linha de base dentro do ruído, mas um otimismo de seleção de +0,0137 coloca a estimativa honesta em <strong>~0,438</strong>, que é <strong>inferior</strong> à linha de base de 255 colunas de 0,4531. Se essa diferença é real é exatamente o que as duas pontuações do Kaggle irão decidir, porque o conjunto de teste nunca viu a seleção. <strong>Essas pontuações ainda não existem; este documento está marcado como pendente nesse ponto.</strong></p>
+<hr />
+<h2 id="3-visita-guiada-a-matéria-que-o-curso-não-cobre">3. Visita guiada: a matéria que o curso não cobre<a class="anchor" href="#3-visita-guiada-a-matéria-que-o-curso-não-cobre" aria-label="link">#</a></h2>
+<p>O curso cobre a justificação da seleção de variáveis e os métodos wrapper/embedded (Aula2b 20–22), codificação por rótulos vs. one-hot (Aula2b 24), importância por permutação e MDI (PL_7 26–33), validação cruzada k-fold (PL_2 39–48), e precisão/revocação/F1 (PL_2 14–27). Tudo o que se segue <strong>não</strong> está nesses diapositivos. Cada entrada diz o que é, porque esta etapa precisou dele, e a armadilha que ele prepara.</p>
+<h3 id="3-1-f1-macro">3.1 F1 macro<a class="anchor" href="#3-1-f1-macro" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> O F1 simples (PL_2 diapositivo 26) está definido para duas classes. Com 16 classes é preciso escolher como combinar 16 pontuações F1 por classe. O F1 <strong>macro</strong> é a média não ponderada das 16 pontuações por classe. O F1 <strong>ponderado</strong> pesa cada classe pelo seu suporte. O F1 <strong>micro</strong> é simplesmente a exatidão (accuracy) em problemas de rótulo único.</p>
+<p><strong>Porque importa aqui.</strong> A competição avalia com F1 macro, por isso todos os números deste documento são F1 macro. A diferença não é cosmética: a faixa 0 tem 207 linhas (1,9%), a faixa 10 tem 1.062. Com média macro, a faixa de 207 linhas conta tanto como a de 1.062, pelo que um modelo bom nas faixas grandes e mau nas raras obtém uma pontuação muito pior em macro do que em ponderado ou micro.</p>
+<p><strong>A armadilha.</strong> É por isso que a comparação arquivada de <code>data_v1</code> não é comparável com esta. Esse arquivo mediu <strong>exatidão</strong> e reportou que o top-20 perdia 4,3 pontos percentuais. O F1 macro dá mais peso às faixas raras, por isso o mesmo corte de variáveis custa mais sob F1 macro. Nunca colocar o valor de 4,3 pontos ao lado de um número de F1 macro.</p>
+<h3 id="3-2-validação-cruzada-repetida">3.2 Validação cruzada repetida<a class="anchor" href="#3-2-validação-cruzada-repetida" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> O curso ensina uma passagem de k-fold: dividir os dados em k folds, treinar k vezes, fazer a média das k pontuações. A validação cruzada <strong>repetida</strong> faz todo esse procedimento R vezes com partições aleatórias diferentes. Aqui R = 3 e k = 5, o que dá <strong>15 folds</strong>.</p>
+<p><strong>Porque importa aqui.</strong> Uma única passagem de 5 folds dá 5 números. O seu desvio padrão é uma estimativa de quanto a pontuação varia com a <em>divisão</em>, e com 5 números essa estimativa é ela própria muito ruidosa. Repetir dá 15 números e uma estimativa mais estável. Todos os "±" deste documento são o desvio padrão ao longo desses 15 folds.</p>
+<p><strong>A armadilha.</strong> Os 15 folds <strong>não são independentes</strong>. As três repetições avaliam as mesmas linhas, apenas particionadas de forma diferente. Por isso o desvio padrão entre folds é uma dispersão <strong>descritiva</strong>, não um intervalo de confiança. Não calcular "média ± 2 EP" a partir dele e não o tratar como um teste de significância. Isto está dito no notebook precisamente por esta razão.</p>
+<h3 id="3-3-comparação-emparelhada-em-folds-idênticos">3.3 Comparação emparelhada em folds idênticos<a class="anchor" href="#3-3-comparação-emparelhada-em-folds-idênticos" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Ao comparar dois modelos, compará-los <strong>fold a fold nas mesmas linhas</strong>, e não comparando duas médias. Para o fold <em>i</em>, calcular <code>baseline_i − candidate_i</code>; depois olhar para a distribuição dessas diferenças.</p>
+<p><strong>Porque importa aqui.</strong> Dois modelos avaliados no mesmo fold partilham a dificuldade desse fold. O fold 2 é difícil para ambos; o fold 4 é fácil para ambos. A diferenciação cancela essa componente partilhada, pelo que a <a class="concept" href="#3-3-comparação-emparelhada-em-folds-idênticos" title="Explained in §3.3">diferença emparelhada</a> é muito menos ruidosa do que as duas pontuações em bruto. A coluna <code>paired_difference_mean</code> do varrimento de K é exatamente isto: linha de base menos K, por fold, e depois a média.</p>
+<p><strong>A armadilha.</strong> Uma diferença emparelhada próxima de zero com grande dispersão <em>não</em> é evidência de igualdade. É evidência de <strong>nenhuma diferença detetável com esta dimensão de amostra</strong>. A distinção importa para a constatação 1: não se demonstrou que 40 colunas são tão boas como 255, apenas que não se demonstrou que são piores.</p>
+<h3 id="3-4-pré-registo-de-uma-regra-de-decisão">3.4 Pré-registo de uma regra de decisão<a class="anchor" href="#3-4-pré-registo-de-uma-regra-de-decisão" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Escrever a regra de decisão <strong>antes</strong> de ver o resultado e depois aplicá-la mecanicamente. É prática padrão em investigação e não é um tópico do curso.</p>
+<p><strong>Porque importa aqui.</strong> O modo de falha tentador é correr o varrimento, ver que K = 60 tem a melhor pontuação, e depois definir "dentro do ruído" de forma a que 60 passe. Isso seria escolher a regra para se ajustar à resposta. Duas regras nesta etapa foram fixadas antecipadamente e são citadas literalmente na <a class="xref" href="#4-método-tal-como-executado">§4</a>.</p>
+<p><strong>A armadilha.</strong> O <a class="concept" href="#3-4-pré-registo-de-uma-regra-de-decisão" title="Explained in §3.4">pré-registo</a> não torna a regra <em>correta</em>; torna-a <strong>honesta</strong>. Uma regra mal escolhida aplicada mecanicamente continua a ser uma regra mal escolhida. A constatação 2 é exatamente este caso: a regra foi seguida, e a regra é discutivelmente demasiado rígida. Ambas as afirmações pertencem ao registo.</p>
+<h3 id="3-5-fuga-de-seleção-e-seleção-aninhada">3.5 Fuga de seleção e seleção aninhada<a class="anchor" href="#3-5-fuga-de-seleção-e-seleção-aninhada" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Esta é a ideia mais importante da etapa e o curso não a enuncia. O diapositivo 20 da Aula2b diz que a seleção de variáveis "reduz o sobreajuste" e fica por aí. Nunca diz que <strong>o ato de selecionar variáveis usando rótulos que depois aparecem num fold de validação inflaciona a pontuação que se mede</strong>.</p>
+<p>O mecanismo: as Etapas 1 e 2 olham para os rótulos de <strong>todas as linhas</strong> para decidir que colunas são importantes. Com validação cruzada de 5 folds, cada linha está em algum fold de validação. Logo, o rótulo de cada linha influenciou a escolha das colunas, e depois essas mesmas linhas foram usadas para avaliar o modelo. A pontuação é otimista.</p>
+<p><strong>Porque importa aqui.</strong> Os folds congelados protegem o <em>pré-processador</em> de fugas — o escalonador e o codificador são ajustados dentro de cada fold. <strong>Não</strong> protegem contra olhar para pontuações de validação enquanto se escolhem colunas. Essa é uma fuga diferente, e é invisível a menos que se procure por ela.</p>
+<p><strong>A correção — <a class="concept" href="#3-5-fuga-de-seleção-e-seleção-aninhada" title="Explained in §3.5">seleção aninhada</a>.</strong> Correr o procedimento de seleção <em>completo</em> dentro de cada fold externo:</p>
+<ol type="1">
+<li>Tomar apenas as linhas de treino do fold externo.</li>
+<li>Retirar delas uma amostra interna de retenção de 20%.</li>
+<li>Correr a pré-seleção por <a class="concept" href="#3-6-informação-mútua-com-correção-de-enviesamento-por-baralhamento" title="Explained in §3.6">informação mútua</a> nos restantes 80%, ajustar o ordenador aí, e ordenar por permutação <strong>na amostra de retenção</strong> — de modo a que a permutação seja fora de amostra, tal como na Etapa 2.</li>
+<li>Tomar as K primeiras, ajustar o modelo final nas linhas de treino externas, avaliar no fold de validação externo.</li>
+</ol>
+<p><strong>A armadilha.</strong> Se ajustar o ordenador a todas as linhas de treino externas e depois permutar num subconjunto delas, a permutação é <strong>em amostra</strong>. Isso inflaciona colunas de alta cardinalidade e contamina a diferença que se está a tentar medir. O notebook usa uma amostra de retenção genuína por esta razão.</p>
+<h3 id="3-6-informação-mútua-com-correção-de-enviesamento-por-baralhamento">3.6 Informação mútua com correção de enviesamento por baralhamento<a class="anchor" href="#3-6-informação-mútua-com-correção-de-enviesamento-por-baralhamento" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> A informação mútua (IM) mede quanto é que conhecer uma coluna reduz a incerteza sobre o rótulo. Deteta dependência não linear, ao contrário da correlação. O curso oferece o teste de <strong>qui-quadrado</strong> para dependência variável/alvo (Aula2b diapositivo 21); a IM é uma ferramenta diferente e mais geral.</p>
+<p><strong>Porque importa aqui.</strong> A Etapa 1 usa a IM como primeira pré-seleção barata, reduzindo 255 entradas a 136 colunas candidatas antes da ordenação por permutação, que é cara.</p>
+<p><strong>A armadilha — a IM é enviesada para cima pela cardinalidade.</strong> Uma coluna com muitos valores distintos pode parecer informativa só por acaso. A correção usada aqui é <strong>baralhar os rótulos</strong>, recalcular a IM e subtrair o valor baralhado. O que sobrevive é sinal acima do que a associação aleatória produz. Sem esta correção, a IM favorece sistematicamente colunas de alta cardinalidade.</p>
+<h3 id="3-7-importância-por-permutação-em-f1-macro">3.7 Importância por permutação em F1 macro<a class="anchor" href="#3-7-importância-por-permutação-em-f1-macro" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Os diapositivos 30–31 de PL_7 introduzem a importância por permutação: baralhar uma coluna e medir quanto a pontuação cai. O curso demonstra-a com <strong>exatidão</strong>. Aqui o avaliador é o <strong>F1 macro</strong>.</p>
+<p><strong>Porque importa aqui.</strong> A importância de uma coluna é definida <em>em relação à métrica</em>. Baralhar uma coluna que só importa para as faixas raras quase não mexe na exatidão mas mexe muito no F1 macro. Assim, esta ordenação responde a "que colunas importam para o F1 macro", que é a métrica da competição.</p>
+<p><strong>A armadilha — valores negativos têm significado.</strong> Uma coluna com importância negativa <em>melhorou</em> a pontuação quando foi baralhada, ou seja, estava a prejudicar ativamente nos folds de validação. Isto não é um erro de programação. <strong>48 das 136 colunas pré-selecionadas têm importância negativa</strong> (constatação 5). São evidência real de que essas colunas transportam ruído que o modelo estava a ajustar.</p>
+<h3 id="3-8-correlação-de-ordem-de-spearman">3.8 Correlação de ordem de Spearman<a class="anchor" href="#3-8-correlação-de-ordem-de-spearman" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Uma correlação entre duas <strong>ordenações</strong>, não entre dois valores. Pergunta: quando a ordenação A coloca uma coluna no topo, a ordenação B também a coloca no topo? Varia de −1 a +1 e ignora as magnitudes, apenas a ordem.</p>
+<p><strong>Porque importa aqui.</strong> A Etapa 3 compara duas ordenações das mesmas 20 colunas produzidas por duas pipelines diferentes. A correlação de Pearson estaria errada — os valores de importância têm escalas completamente diferentes (0,005 vs. 0,174). Spearman só se interessa pela ordem, que é o que significa "estas duas ordenações concordam?".</p>
+<p><strong>A armadilha.</strong> Um Spearman de 0,492 diz que as ordenações <strong>discordam</strong>. Não diz qual delas está certa. Não existe verdade absoluta para "a importância correta"; a única verificação externa é a pontuação da competição.</p>
+<h3 id="3-9-enviesamento-da-codificação-ordinal-nas-importâncias-de-árvores">3.9 Enviesamento da codificação ordinal nas importâncias de árvores<a class="anchor" href="#3-9-enviesamento-da-codificação-ordinal-nas-importâncias-de-árvores" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> PL_7 diz que a MDI é enviesada para variáveis de alta cardinalidade. Este é um efeito <strong>diferente e mais acentuado</strong>: uma coluna <strong>nominal</strong> (sem ordem natural) codificada por rótulos fica com uma ordem numérica arbitrária. Uma árvore tem então de fazer vários cortes para isolar uma categoria que a codificação one-hot isolaria num só.</p>
+<p><strong>Porque importa aqui.</strong> Foi o que <code>PC1A</code> demonstrou. Com códigos ordinais, a floresta aleatória colocava-a em <strong>33.º</strong> com importância 0,005. Com a pipeline one-hot implementada, fica em <strong>1.º</strong> com importância 0,174 — um fator de 35. Uma nominal de 3 níveis precisa de vários cortes com códigos ordinais e de um só com one-hot, por isso a lente ordinal subestima-a sistematicamente.</p>
+<p><strong>A armadilha.</strong> A Etapa 3 muda <strong>duas coisas ao mesmo tempo</strong> — o modelo (RF → <code>hist_gb</code>) e a representação (ordinal → one-hot) — pelo que o 0,492 não pode ser atribuído apenas à codificação. Com n = 20 as barras de erro são largas. A conclusão é qualitativa: a escolha de representação mudou a resposta.</p>
+<h3 id="3-10-histgradientboostingclassifier-e-passthrough">3.10 <code>HistGradientBoostingClassifier</code> e <code>passthrough</code><a class="anchor" href="#3-10-histgradientboostingclassifier-e-passthrough" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> O curso cobre boosting e XGBoost (Aula5 diapositivos 8–10). Esta etapa usa o <code>HistGradientBoostingClassifier</code> do scikit-learn, que agrupa variáveis contínuas em histogramas por razões de velocidade e trata valores em falta de forma nativa. <code>passthrough</code> significa que o pré-processador deixa passar as colunas em bruto sem alteração, deixando o modelo fazer os seus próprios cortes em vez de receber colunas já codificadas.</p>
+<p><strong>Porque importa aqui.</strong> É o modelo que o grupo implementa de facto, por isso a ordenação tem de ser produzida por <em>este</em> modelo com <em>esta</em> representação. Ordenar com qualquer outra configuração mede essa configuração, não a implementada.</p>
+<p><strong>A armadilha.</strong> O tratamento nativo de categóricas significa que o modelo pode ver uma coluna nominal como uma categoria, não como um número — que é precisamente a razão pela qual discorda da RF ordinal. A discordância é uma propriedade da pipeline, não um erro em nenhuma das ordenações.</p>
+<h3 id="3-11-impressões-digitais-e-proveniência">3.11 Impressões digitais e proveniência<a class="anchor" href="#3-11-impressões-digitais-e-proveniência" aria-label="link">#</a></h3>
+<p><strong>O que é.</strong> Uma <a class="concept" href="#3-11-impressões-digitais-e-proveniência" title="Explained in §3.11">impressão digital</a> (fingerprint) é um hash de um conjunto de nomes de colunas (e dos valores do alvo). A proveniência é o registo do que produziu um artefacto: o SHA do git, se a árvore estava suja, a semente, a especificação dos folds.</p>
+<p><strong>Porque importa aqui.</strong> O <code>selected_features.json</code> guarda ambos. O carregador verifica novamente a impressão digital quando o ficheiro é lido: se a lista final já não corresponde aos dados, <strong>falha de forma ruidosa</strong> em vez de descartar uma coluna em silêncio. Uma lista final que deixou discretamente de se ajustar aos dados é pior do que não ter lista nenhuma.</p>
+<p><strong>A armadilha.</strong> Uma impressão digital protege contra <em>desvio</em>, não contra <em>erro</em>. Confirma que as colunas são as que foram escolhidas; não diz nada sobre se escolhê-las foi uma boa ideia.</p>
+<hr />
+<h2 id="4-método-tal-como-executado">4. Método tal como executado<a class="anchor" href="#4-método-tal-como-executado" aria-label="link">#</a></h2>
+<h3 id="4-1-etapas">4.1 Etapas<a class="anchor" href="#4-1-etapas" aria-label="link">#</a></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Etapa</th>
+<th>O que faz</th>
+<th>Custo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Linha de base: <code>hist_gb</code> com as 255 entradas, 15 folds</td>
+<td>~5 min</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Pré-seleção por informação mútua com correção por baralhamento: 255 → 136 colunas</td>
+<td>rápida</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>Ordenação por permutação das 136, RF com <a class="concept" href="#3-9-enviesamento-da-codificação-ordinal-nas-importâncias-de-árvores" title="Explained in §3.9">codificação ordinal</a>, 5 repetições</td>
+<td>~28 min</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Verificação de consistência da representação: reordenar o top 20 com a pipeline implementada</td>
+<td>~5 min</td>
+</tr>
+<tr class="odd">
+<td>3b</td>
+<td><strong>Alternativa, correu aqui:</strong> reordenar as 136 com <code>hist_gb</code> + <code>passthrough</code></td>
+<td>~30 min</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Varrimento de K sobre {10, 15, 20, 30, 40, 60, 80}, um modelo, emparelhado contra a linha de base</td>
+<td>~20 min</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Seleção aninhada: todo o procedimento refeito dentro de cada fold externo</td>
+<td>~22 min</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Persistência com impressões digitais</td>
+<td>rápida</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>Duas submissões: selecionadas K=40 e todas as variáveis</td>
+<td>~15 min</td>
+</tr>
+</tbody>
+</table>
+<p>O tempo total de parede foi de cerca de 2 h 20 min, incluindo a alternativa da Etapa 3.</p>
+<h3 id="4-2-as-duas-regras-pré-registadas-à-letra">4.2 As duas regras pré-registadas, à letra<a class="anchor" href="#4-2-as-duas-regras-pré-registadas-à-letra" aria-label="link">#</a></h3>
+<p><strong>Ramo da Etapa 3</strong> (fixado antes da execução; citado do notebook):</p>
+<blockquote>
+<p>Se a correlação for alta (&gt; 0,7), a lente ordinal serve e a lista final é construída a partir da ordenação da Etapa 2. Se for baixa, a lista final é construída a partir da representação que o modelo usa de facto: todo o conjunto pré-selecionado é reordenado com <code>hist_gb</code> + <code>passthrough</code>.</p>
+<p>Este é um ramo pré-registado, não uma escolha feita depois de ver a pontuação. A única coisa que o número decide é <em>qual ordenação já declarada vence</em>.</p>
+</blockquote>
+<p><strong>Regra de aprovação da Etapa 4</strong> (fixada antes da execução; citada do notebook):</p>
+<blockquote>
+<p>K passa se a diferença emparelhada média ao longo dos folds for <strong>no máximo 0,005</strong> e nenhuma repetição isolada mostrar uma perda pior do que 0,010.</p>
+</blockquote>
+<p><strong>Alternativa pré-registada:</strong> se nenhum K passasse, nem mesmo K = 80, a lista final seria o conjunto completo de entradas e o relatório diria que a seleção não sobreviveu à validação. Isto não foi acionado.</p>
+<h3 id="4-3-porque-a-etapa-5-espelha-o-vencedor-da-etapa-3">4.3 Porque a Etapa 5 espelha o vencedor da Etapa 3<a class="anchor" href="#4-3-porque-a-etapa-5-espelha-o-vencedor-da-etapa-3" aria-label="link">#</a></h3>
+<p>A Etapa 5 usa o <strong>mesmo ordenador que produziu a lista final</strong>: a pipeline <code>hist_gb</code> implementada, porque a Etapa 3 falhou. Se tivesse usado a RF ordinal, a diferença mediria a <em>discordância entre dois ordenadores</em> em vez do <em>otimismo de seleção</em>. Espelhar mantém a medição limpa.</p>
+<hr />
+<h2 id="5-resultados">5. Resultados<a class="anchor" href="#5-resultados" aria-label="link">#</a></h2>
+<h3 id="5-1-linha-de-base-e-o-varrimento-de-k">5.1 Linha de base e o varrimento de K<a class="anchor" href="#5-1-linha-de-base-e-o-varrimento-de-k" aria-label="link">#</a></h3>
+<p>Linha de base: <code>hist_gb</code> com as 255 entradas, <strong>0,4531 ± 0,0096</strong> (execução <code>20261103T225840834739_hist-gb-all-recoded</code>).</p>
+<p>A diferença emparelhada é <strong>linha de base menos K</strong>, por isso um número positivo é uma perda.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">F1 macro</th>
+<th style="text-align: right;">desvio padrão</th>
+<th style="text-align: right;">diferença emparelhada</th>
+<th style="text-align: right;">pior repetição</th>
+<th style="text-align: center;">passa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0,4139</td>
+<td style="text-align: right;">0,0096</td>
+<td style="text-align: right;">+0,0392</td>
+<td style="text-align: right;">+0,0347</td>
+<td style="text-align: center;">não</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0,4294</td>
+<td style="text-align: right;">0,0093</td>
+<td style="text-align: right;">+0,0237</td>
+<td style="text-align: right;">+0,0199</td>
+<td style="text-align: center;">não</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0,4367</td>
+<td style="text-align: right;">0,0094</td>
+<td style="text-align: right;">+0,0164</td>
+<td style="text-align: right;">+0,0100</td>
+<td style="text-align: center;">não</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">0,4403</td>
+<td style="text-align: right;">0,0104</td>
+<td style="text-align: right;">+0,0128</td>
+<td style="text-align: right;">+0,0098</td>
+<td style="text-align: center;">não</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><strong>40</strong></td>
+<td style="text-align: right;"><strong>0,4519</strong></td>
+<td style="text-align: right;"><strong>0,0104</strong></td>
+<td style="text-align: right;"><strong>+0,0012</strong></td>
+<td style="text-align: right;"><strong>−0,0049</strong></td>
+<td style="text-align: center;"><strong>sim</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;"><strong>0,4587</strong></td>
+<td style="text-align: right;">0,0072</td>
+<td style="text-align: right;">−0,0056</td>
+<td style="text-align: right;"><strong>−0,0102</strong></td>
+<td style="text-align: center;">não</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">0,4574</td>
+<td style="text-align: right;">0,0090</td>
+<td style="text-align: right;">−0,0044</td>
+<td style="text-align: right;">−0,0070</td>
+<td style="text-align: center;">sim</td>
+</tr>
+</tbody>
+</table>
+<p><strong>K = 40 é o menor conjunto que passa a regra.</strong></p>
+<h3 id="5-2-a-verificação-da-etapa-3">5.2 A verificação da Etapa 3<a class="anchor" href="#5-2-a-verificação-da-etapa-3" aria-label="link">#</a></h3>
+<p>Correlação de Spearman entre as ordenações da RF ordinal e da pipeline implementada: <strong>0,492</strong>. Abaixo de 0,7, por isso a alternativa correu e a lista final vem da ordenação implementada (<code>ranking_source: stage3_deployed_hist_gb</code>).</p>
+<p>A discordância mais consequente:</p>
+<table>
+<thead>
+<tr class="header">
+<th>coluna</th>
+<th style="text-align: right;">posição ordinal</th>
+<th style="text-align: right;">posição implementada</th>
+<th style="text-align: right;">importância ordinal</th>
+<th style="text-align: right;">importância implementada</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PC1A</code></td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td style="text-align: right;">0,005</td>
+<td style="text-align: right;"><strong>0,174</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-3-a-verificação-aninhada">5.3 A verificação aninhada<a class="anchor" href="#5-3-a-verificação-aninhada" aria-label="link">#</a></h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">fold</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">F1 macro</th>
+<th style="text-align: right;">colunas diferentes da Etapa 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0,4498</td>
+<td style="text-align: right;">26</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0,4278</td>
+<td style="text-align: right;">40</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0,4320</td>
+<td style="text-align: right;">34</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0,4551</td>
+<td style="text-align: right;">38</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">0,4262</td>
+<td style="text-align: right;">38</td>
+</tr>
+</tbody>
+</table>
+<p>Média da Etapa 5: <strong>0,4382 ± 0,0133</strong>. Etapa 4 para o mesmo K: 0,4519. <strong>Otimismo de seleção: +0,0137.</strong></p>
+<h3 id="5-4-comportamento-por-classe-k40-contra-a-linha-de-base">5.4 Comportamento por classe, K=40 contra a linha de base<a class="anchor" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base" aria-label="link">#</a></h3>
+<p>Ver <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a> para a interpretação desta tabela.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">faixa</th>
+<th style="text-align: right;">F1 linha de base</th>
+<th style="text-align: right;">F1 K=40</th>
+<th style="text-align: right;">delta</th>
+<th style="text-align: right;">suporte</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0,857</td>
+<td style="text-align: right;">0,829</td>
+<td style="text-align: right;">−0,028</td>
+<td style="text-align: right;">207</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0,308</td>
+<td style="text-align: right;"><strong>0,350</strong></td>
+<td style="text-align: right;"><strong>+0,041</strong></td>
+<td style="text-align: right;">172</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0,601</td>
+<td style="text-align: right;">0,585</td>
+<td style="text-align: right;">−0,016</td>
+<td style="text-align: right;">399</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0,373</td>
+<td style="text-align: right;"><strong>0,388</strong></td>
+<td style="text-align: right;"><strong>+0,015</strong></td>
+<td style="text-align: right;">377</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0,259</td>
+<td style="text-align: right;"><strong>0,277</strong></td>
+<td style="text-align: right;"><strong>+0,018</strong></td>
+<td style="text-align: right;">449</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0,347</td>
+<td style="text-align: right;">0,344</td>
+<td style="text-align: right;">−0,003</td>
+<td style="text-align: right;">647</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0,358</td>
+<td style="text-align: right;">0,340</td>
+<td style="text-align: right;">−0,018</td>
+<td style="text-align: right;">859</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0,389</td>
+<td style="text-align: right;"><strong>0,401</strong></td>
+<td style="text-align: right;"><strong>+0,013</strong></td>
+<td style="text-align: right;">862</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0,634</td>
+<td style="text-align: right;">0,621</td>
+<td style="text-align: right;">−0,013</td>
+<td style="text-align: right;">905</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0,661</td>
+<td style="text-align: right;">0,635</td>
+<td style="text-align: right;">−0,026</td>
+<td style="text-align: right;">1014</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0,645</td>
+<td style="text-align: right;">0,619</td>
+<td style="text-align: right;">−0,026</td>
+<td style="text-align: right;">1062</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">0,514</td>
+<td style="text-align: right;"><strong>0,516</strong></td>
+<td style="text-align: right;"><strong>+0,002</strong></td>
+<td style="text-align: right;">1040</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0,380</td>
+<td style="text-align: right;">0,353</td>
+<td style="text-align: right;">−0,027</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0,280</td>
+<td style="text-align: right;">0,252</td>
+<td style="text-align: right;">−0,028</td>
+<td style="text-align: right;">823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">0,313</td>
+<td style="text-align: right;"><strong>0,314</strong></td>
+<td style="text-align: right;"><strong>+0,001</strong></td>
+<td style="text-align: right;">650</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0,449</td>
+<td style="text-align: right;">0,387</td>
+<td style="text-align: right;"><strong>−0,063</strong></td>
+<td style="text-align: right;">496</td>
+</tr>
+</tbody>
+</table>
+<p><strong>6 classes melhoram, 10 pioram, delta médio −0,0098.</strong></p>
+<h3 id="5-5-a-lista-final">5.5 A lista final<a class="anchor" href="#5-5-a-lista-final" aria-label="link">#</a></h3>
+<p>40 colunas, pela ordem de importância implementada:</p>
+<p><code>PC1A</code>, <code>MAINSTAT</code>, <code>HH_INACT</code>, <code>MARSTALEGAL</code>, <code>HATLEVEL</code>, <code>PARTNERS</code>, <code>HH_ACT</code>, <code>PA7_NAC</code>, <code>HHTYPE</code>, <code>HHNBPERS_0_13_COD</code>, <code>IN45</code>, <code>HHNBPERS_COD</code>, <code>JOBSTAT_COD</code>, <code>NT1</code>, <code>IN47</code>, <code>BM2</code>, <code>PA1</code>, <code>IN63</code>, <code>HA2</code>, <code>HHINCOME</code>, <code>FT_PT</code>, <code>BM1</code>, <code>IN65</code>, <code>PA5</code>, <code>PE9</code>, <code>PL9_tot</code>, <code>IN4</code>, <code>IN24</code>, <code>IN28</code>, <code>IN15</code>, <code>MD1</code>, <code>SK2</code>, <code>IN16</code>, <code>PC2</code>, <code>DH6</code>, <code>HA1G</code>, <code>JOBISCO_COD</code>, <code>PL5</code>, <code>AM3</code>, <code>IN22</code></p>
+<p>Por tema:</p>
+<ul>
+<li><strong>Situação perante o trabalho e emprego</strong> — <code>MAINSTAT</code>, <code>JOBSTAT_COD</code>, <code>JOBISCO_COD</code>, <code>FT_PT</code>, <code>HH_ACT</code>, <code>HH_INACT</code></li>
+<li><strong>Educação</strong> — <code>HATLEVEL</code>, <code>PE9</code>, <code>NT1</code></li>
+<li><strong>Estrutura do agregado familiar</strong> — <code>HHTYPE</code>, <code>HHNBPERS_COD</code>, <code>HHNBPERS_0_13_COD</code>, <code>PARTNERS</code>, <code>MARSTALEGAL</code></li>
+<li><strong>Rendimento e riqueza</strong> — <code>HHINCOME</code>, <code>PL9_tot</code>, <code>PL5</code>, <code>MD1</code></li>
+<li><strong>Saúde e incapacidade</strong> — <code>HA2</code>, <code>HA1G</code>, <code>DH6</code></li>
+<li><strong>Migração e nacionalidade</strong> — <code>PA7_NAC</code>, <code>PA1</code>, <code>PA5</code>, <code>BM1</code>, <code>BM2</code></li>
+<li><strong>Região</strong> — <code>PC1A</code>, <code>PC2</code></li>
+<li><strong>Atitudes e opiniões</strong> — 10 das 40 são colunas <code>IN*</code></li>
+</ul>
+<p><strong>Blocos nunca selecionados:</strong> <code>CD*</code> (9 colunas), <code>AL*</code> (4), <code>HS*</code> (3), <code>AW*</code> (2), <code>HO*</code> (2), <code>PN*</code> (2), <code>UN*</code> (2), <code>LOCNACE</code> (1). Não transportam sinal de permutação para este alvo.</p>
+<hr />
+<h2 id="6-interpretação">6. Interpretação<a class="anchor" href="#6-interpretação" aria-label="link">#</a></h2>
+<h3 id="6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">6.1 Quarenta colunas igualam a linha de base em termos agregados, mas reorganizam por classe<a class="anchor" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe" aria-label="link">#</a></h3>
+<p>A evidência é a tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>.</p>
+<p>A diferença agregada é +0,0012, cerca de um oitavo de um desvio padrão. A leitura honesta é <strong>"nenhuma perda detetável"</strong>, não "40 colunas são tão boas como 255".</p>
+<p>Mas a tabela por classe mostra que este não é um corte neutro. Seis classes melhoram — sobretudo as faixas intermédias esparsas (1, 3, 4, 7) — e dez pioram, incluindo as faixas bem povoadas 9, 10 e 12 e, pior de tudo, <strong>a faixa 15 com −0,063</strong>. O modelo de 40 colunas não é o modelo de 255 colunas com menos ruído; é um modelo <strong>diferente</strong> que troca algumas classes por outras e por acaso fica na mesma média. O <a class="xref" href="#apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A</a> explicita o que significa "reorganização" e porque é que a média pode ficar plana quando isto acontece.</p>
+<p>Isso importa para o objetivo declarado do projeto. O enunciado pede que as previsões do modelo sejam usadas para detetar anomalias de perfil, o que exige que as faixas intermédias estejam bem separadas. Um corte que melhora as faixas 1 e 4 ao mesmo tempo que perde a faixa 15 não é obviamente a troca certa para esse fim, mesmo que o F1 macro não consiga distinguir a diferença.</p>
+<h3 id="6-2-k-60-tem-a-melhor-média-e-a-regra-rejeitou-o">6.2 K = 60 tem a melhor média e a regra rejeitou-o<a class="anchor" href="#6-2-k-60-tem-a-melhor-média-e-a-regra-rejeitou-o" aria-label="link">#</a></h3>
+<p>K = 60 obtém <strong>0,4587</strong>, melhor do que a linha de base na média e melhor do que K = 40. Falha a guarda por <strong>0,0002</strong> (−0,0102 contra um limiar de −0,010).</p>
+<p>Duas coisas são verdadeiras ao mesmo tempo e ambas pertencem ao registo:</p>
+<ul>
+<li><strong>A regra foi fixada antecipadamente e foi seguida.</strong> É esse o objetivo do pré-registo, e a guarda fez exatamente aquilo para que foi concebida.</li>
+<li><strong>A guarda está no fio da navalha com esta dimensão de amostra.</strong> Uma diferença de 0,0002 é ruído, não evidência de instabilidade. K = 60 é <em>plausivelmente</em> o melhor ponto de operação, e foi a regra — não os dados — que escolheu 40.</li>
+</ul>
+<p>O varrimento mostra também <strong>K = 80 a passar</strong> (0,4574, diferença −0,0044) enquanto K = 60 falha. Essa não monotonicidade é um aviso: a guarda está em parte a medir ruído entre folds, e não apenas a qualidade do modelo. Uma regra que rejeita 60 mas aceita 80 não está a seguir um limiar real.</p>
+<p><strong>Esta é uma decisão para os humanos, não um resultado fechado.</strong> As opções estão na <a class="xref" href="#8-decisões-para-os-humanos">§8</a>.</p>
+<h3 id="6-3-a-verificação-da-etapa-3-compensou-o-seu-custo">6.3 A verificação da Etapa 3 compensou o seu custo<a class="anchor" href="#6-3-a-verificação-da-etapa-3-compensou-o-seu-custo" aria-label="link">#</a></h3>
+<p>A RF ordinal colocava <code>PC1A</code> em 33.º, com importância 0,0021; a pipeline implementada coloca-a em 1.º, com importância 0,1741 — um <strong>aumento de 82×</strong>. Se a verificação tivesse passado, <code>PC1A</code> teria sido <strong>retirada da lista final</strong>, e é a coluna isolada mais importante sob o modelo que o grupo entrega.</p>
+<p>A lição metodológica é a parte reutilizável: <strong>ordenar as variáveis com a representação que o modelo usa, ou a ordenação mede a codificação e não os dados.</strong> A lente ordinal não estava errada de uma forma que se manifestasse como erro; estava errada de uma forma que reordenou silenciosamente a resposta.</p>
+<p>Ressalva: a verificação muda o modelo e a representação em conjunto, por isso o 0,492 não pode ser atribuído apenas à codificação, e n = 20 é uma barra de erro larga.</p>
+<h3 id="6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável">6.4 O otimismo de seleção é +0,0137, e a lista final é instável<a class="anchor" href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável" aria-label="link">#</a></h3>
+<p>A Etapa 4 diz 0,4519. A Etapa 5 — o mesmo procedimento com a seleção refeita dentro de cada fold — diz <strong>0,4382</strong>. Cerca de <strong>1,4 pontos da pontuação aparente foram comprados ao olhar para os rótulos</strong>.</p>
+<p>As contagens de colunas por fold são a constatação mais afiada: <strong>26 a 40 das 40 colunas mudam em cada fold, e num fold mudam as 40.</strong> A lista final exata não é um objeto estável. O que a Etapa 5 mede é o <strong>procedimento</strong>, não a lista.</p>
+<p><strong>A consequência desconfortável:</strong> a estimativa honesta de ~0,438 é <strong>inferior</strong> à linha de base de 255 colunas de 0,4531. Com esta evidência, a afirmação defensável não é "40 colunas igualam a linha de base" mas:</p>
+<blockquote>
+<p>40 colunas igualam a pontuação validada cruzada da linha de base, mas, uma vez contabilizado o custo de as escolher, o procedimento pode ser ligeiramente pior do que usar tudo.</p>
+</blockquote>
+<p>Se essa diferença é real está por resolver. A estimativa validada cruzada é otimista para o conjunto selecionado e não para a linha de base, por isso os dois números não são diretamente comparáveis — mas o conjunto de teste nunca viu a seleção, por isso as duas pontuações do Kaggle são a comparação limpa. <strong>Estão pendentes.</strong></p>
+<h3 id="6-5-quarenta-e-oito-colunas-prejudicam-ativamente">6.5 Quarenta e oito colunas prejudicam ativamente<a class="anchor" href="#6-5-quarenta-e-oito-colunas-prejudicam-ativamente" aria-label="link">#</a></h3>
+<p>48 das 136 colunas pré-selecionadas têm importância por permutação <strong>negativa</strong>: baralhá-las <em>melhorou</em> o F1 macro nos folds de validação. Isto é mais forte do que "as restantes não são importantes" — diz que o modelo estava a ajustar ruído através dessas colunas.</p>
+<p>É evidência direta para a afirmação do próprio curso (Aula2b diapositivo 20) de que remover variáveis pouco importantes reduz o sobreajuste. É também uma pista: um modelo treinado nas 88 colunas não negativas pode superar tanto as 40 como as 255.</p>
+<h3 id="6-6-a-concentração-de-importância-não-prevê-a-suficiência">6.6 A concentração de importância não prevê a suficiência<a class="anchor" href="#6-6-a-concentração-de-importância-não-prevê-a-suficiência" aria-label="link">#</a></h3>
+<p>As 10 primeiras colunas concentram <strong>84%</strong> da importância total, e as 20 primeiras concentram <strong>95%</strong> — no entanto K = 20 falha a regra por 1,6 pontos. A concentração de importância e a suficiência do modelo são questões diferentes. Uma coluna pode importar muito e continuar a ser redundante com outra: a importância por permutação reparte o crédito entre colunas correlacionadas, por isso uma coluna pode parecer fraca enquanto o seu grupo é essencial.</p>
+<p>É o mesmo aviso que o notebook registra sobre <code>HA1*</code>/<code>PC1*</code>: o seu nível simples "não aplicável" é 100% para menores de 55 anos e 0% para 55 ou mais, por isso um único corte aos 55 capta todas. São <strong>um único sinal de elegibilidade por idade, não treze achados de saúde</strong>. Reportar temas, não treze descobertas.</p>
+<hr />
+<h2 id="7-porque-não-foram-usados-os-métodos-do-próprio-curso">7. Porque não foram usados os métodos do próprio curso<a class="anchor" href="#7-porque-não-foram-usados-os-métodos-do-próprio-curso" aria-label="link">#</a></h2>
+<p>Esta secção existe porque o curso oferece várias técnicas de seleção de variáveis e esta etapa usou outras. Cada afastamento é deliberado, e um leitor que só conhece a matéria do curso tem o direito de perguntar porquê.</p>
+<p>A taxonomia do diapositivo 22 da Aula2b é o enquadramento: os <strong>filtros</strong> avaliam cada variável contra o alvo sem modelo (qui-quadrado); os <strong>wrappers</strong> usam um modelo e medem quanto o desempenho cai sem a variável (SFS, SBE); os métodos <strong>embedded</strong> selecionam à medida que treinam (LASSO, impureza de árvores). Esta etapa é <strong>filtro e depois wrapper</strong> — a informação mútua pré-seleciona 255 → 136, a importância por permutação ordena essas 136.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Método do curso</th>
+<th>Onde</th>
+<th>Porque não foi usado</th>
+<th>Veredicto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Teste de qui-quadrado</strong></td>
+<td>Aula2b 21</td>
+<td>Univariado e só para categóricas. Exigiria discretizar as 31 colunas numéricas, o que perde informação. A IM trata tipos mistos de forma uniforme e acrescenta uma correção de enviesamento por baralhamento.</td>
+<td><strong>Alternativa defensável.</strong> O qui-quadrado teria sido uma escolha razoável; a IM foi preferida, não exigida.</td>
+</tr>
+<tr class="even">
+<td><strong>Remover baixo desvio padrão / assimétricas / altamente correlacionadas</strong></td>
+<td>Aula2b 21</td>
+<td>São regras de higiene, não seleção sensível ao alvo. Respondem a "esta coluna comporta-se bem?", não a "prevê a idade?".</td>
+<td>Aplicadas implicitamente pela recodificação; não usadas como critério de seleção.</td>
+</tr>
+<tr class="odd">
+<td><strong>Wrapper SFS / SBE</strong></td>
+<td>Aula2b 22</td>
+<td>A pesquisa combinatória sobre 136 colunas × 15 folds é inviável.</td>
+<td><strong>Substituído, não omitido.</strong> A importância por permutação é o wrapper tratável: mede a utilidade pelo desempenho do classificador, que é a própria definição do diapositivo.</td>
+</tr>
+<tr class="even">
+<td><strong>Embedded / LASSO</strong></td>
+<td>Aula2b 22</td>
+<td>L1 sobre 1.170 colunas one-hot com 16 classes é instável, e a seleção seria linear.</td>
+<td>Não usado. Precisaria da sua própria validação.</td>
+</tr>
+<tr class="odd">
+<td><strong>PCA</strong></td>
+<td>Aula2b 22</td>
+<td>Destrói a interpretabilidade, que o enunciado exige explicitamente ("analisar os fatores que mais contribuem").</td>
+<td>Rejeitado por razões de requisito, não de desempenho.</td>
+</tr>
+<tr class="even">
+<td><strong>Importância por permutação</strong></td>
+<td>PL_7 27–31</td>
+<td>—</td>
+<td><strong>Usado.</strong> É o núcleo do método.</td>
+</tr>
+<tr class="odd">
+<td><strong>Impureza de árvores (MDI)</strong></td>
+<td>PL_7 30</td>
+<td>Enviesada para colunas de alta cardinalidade; em amostra.</td>
+<td>Usada apenas como ordenação interna da RF na Etapa 2, depois substituída.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>O resumo honesto.</strong> O núcleo — ordenar variáveis pela importância por permutação do F1 macro de um modelo — é PL_7 mais o diapositivo 22 da Aula2b. As extensões são a disciplina de validação em torno dele: <a class="concept" href="#3-2-validação-cruzada-repetida" title="Explained in §3.2">validação cruzada repetida</a>, comparação emparelhada, uma regra pré-registada e seleção aninhada.</p>
+<p>O único afastamento genuíno é a <strong>seleção aninhada</strong>, e existe para <em>testar</em> a afirmação da aula (Aula2b diapositivo 20) de que remover variáveis pouco importantes reduz o sobreajuste. O resultado é que a afirmação é <strong>condicional</strong>: o ganho aparente é em parte comprado ao olhar para os rótulos. É um contributo para o argumento do curso, não um desvio dele. A <a class="xref" href="#6-5-quarenta-e-oito-colunas-prejudicam-ativamente">§6.5</a> é a outra metade do mesmo teste — 48 colunas com importância negativa são evidência direta <em>a favor</em> do diapositivo.</p>
+<hr />
+<h2 id="8-decisões-para-os-humanos">8. Decisões para os humanos<a class="anchor" href="#8-decisões-para-os-humanos" aria-label="link">#</a></h2>
+<p>Estas estão em aberto. Esta etapa informa-as; não as resolve.</p>
+<p><strong>D1. Que K entregar: 40 ou 60?</strong> A regra escolheu 40. A média favorece 60. Um caminho intermédio defensável é submeter ambos ao Kaggle e deixar o conjunto de teste decidir, o que custa duas das três submissões diárias. <strong>Recomendação:</strong> submeter K=40 e o modelo com todas as variáveis primeiro (ambos já construídos), depois K=60 se o orçamento diário o permitir.</p>
+<p><strong>D2. Vale a pena manter a seleção de todo?</strong> Se a pontuação do Kaggle para K=40 não for pelo menos tão boa como a de todas as variáveis, a conclusão honesta é que a seleção não sobreviveu à validação, e o grupo deve entregar o modelo completo. Isto era a alternativa pré-registada para a <em>regra</em>; agora é uma questão em aberto para o <em>conjunto de teste</em>.</p>
+<p><strong>D3. Deve a guarda ser alterada?</strong> A guarda de −0,010 por repetição rejeitou 60 e aceitou 80. Se o grupo quiser continuar a usar uma guarda, deve derivá-la de novo — por exemplo a partir da dispersão observada entre repetições em vez de um número redondo. Alterá-la agora seria post-hoc, por isso qualquer alteração tem de ser declarada para a <em>próxima</em> etapa, não aplicada retroativamente.</p>
+<p><strong>D4. O que fazer com as 48 colunas de importância negativa?</strong> Uma execução nas 88 colunas não negativas é barata e é uma hipótese genuína, não uma expedição à procura de resultados, porque o sinal foi medido fora de amostra nos folds de validação.</p>
+<p><strong>D5. As colunas de atitude <code>IN*</code>.</strong> 10 das 40 colunas selecionadas são atitudes e opiniões. Ficam no topo com <code>hist_gb</code> e no fundo com a RF ordinal. Ou é sinal real, ou é o mesmo artefacto de representação. <strong>Não construir uma narrativa sobre elas</strong> até alguém verificar o que essas colunas significam e se o efeito sobrevive a uma representação diferente.</p>
+<hr />
+<h2 id="9-limitações">9. Limitações<a class="anchor" href="#9-limitações" aria-label="link">#</a></h2>
+<ol type="1">
+<li><strong>As pontuações do Kaggle estão pendentes.</strong> A afirmação central da <a class="xref" href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável">§6.4</a> fica por resolver sem elas. Tudo o resto é apenas evidência validada cruzada.</li>
+<li><strong>A verificação aninhada usa 5 folds externos e uma divisão interna por fold.</strong> A estimativa de otimismo é ela própria ruidosa; ±0,0133 entre folds.</li>
+<li><strong>Os 15 folds não são independentes</strong>, por isso não é calculado nenhum teste de significância e nenhum deve ser.</li>
+<li><strong>A verificação da Etapa 3 está confundida</strong> por construção (o modelo e a representação mudam em conjunto) e usa n = 20.</li>
+<li><strong>O mapeamento da faixa 0 está em disputa</strong> (<code>TODO.md</code>). Nenhum resultado aqui depende dele, porque os rótulos são tratados como códigos, mas nenhuma interpretação de idade deve ser publicada sem esta ressalva.</li>
+<li><strong>As saídas guardadas de <code>reports/01</code> são de <code>data_v1</code></strong> e mediram exatidão, não F1 macro. Não são comparáveis e não são usadas aqui.</li>
+<li><strong>A importância por permutação reparte o crédito entre colunas correlacionadas.</strong> Um único membro de um grupo correlacionado pode parecer fraco enquanto o grupo é essencial. É por isso que a <a class="xref" href="#6-6-a-concentração-de-importância-não-prevê-a-suficiência">§6.6</a> reporta temas.</li>
+<li><strong>Nada aqui é causal.</strong> <code>HATLEVEL</code> estar no topo não significa que a educação cause a faixa etária; ambos refletem a fase da vida.</li>
+</ol>
+<hr />
+<h2 id="apêndice-a-o-que-significa-reorganizar-por-classe">Apêndice A. O que significa "reorganizar por classe"<a class="anchor" href="#apêndice-a-o-que-significa-reorganizar-por-classe" aria-label="link">#</a></h2>
+<p>Este apêndice existe porque a expressão é usada no <a class="xref" href="#1-objetivo-e-público">§1</a>, no <a class="xref" href="#2-sumário-executivo">§2</a> (constatação 1) e no <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>, e o relatório nunca a define. É um auxiliar de leitura da tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>; não acrescenta evidência nova.</p>
+<p><strong>A definição numa frase.</strong> Uma <em>reorganização</em> significa que o modelo de 40 colunas e o de 255 colunas pontuam <strong>mais ou menos o mesmo em média</strong>, mas não são iguais <strong>classe a classe</strong>: o modelo de 40 colunas ganha em algumas faixas e perde noutras, e os ganhos e as perdas cancelam-se aproximadamente.</p>
+<p><strong>Porque é que uma média plana pode esconder isto.</strong> O <a class="xref" href="#3-1-f1-macro">F1 macro</a> é a média simples das 16 pontuações por classe, e uma média deita fora os valores individuais. Dois modelos podem partilhar a média e ter perfis por classe completamente diferentes: um pode ser melhor nas faixas raras e pior nas comuns, ou o contrário. O número agregado só diz onde cai a média, não diz de que classes foi construída. É por isso que o relatório diz que o agregado <em>esconde</em> a reorganização, e não que a <em>contradiz</em>.</p>
+<p><strong>Como ler a tabela do <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>.</strong> Cada linha é uma faixa etária. A coluna <code>delta</code> é <code>F1 K=40 − F1 linha de base</code>: negativo significa que o modelo de 40 colunas é pior nessa faixa, positivo significa melhor. A coluna <code>suporte</code> é o número de linhas dos dados que pertencem a essa faixa. Dois números importam:</p>
+<ul>
+<li><strong>6 classes são positivas e 10 são negativas</strong>, por isso os dois modelos discordam nas 16 faixas — nenhuma está exatamente empatada.</li>
+<li><strong>O delta médio é −0,0098</strong>, ou seja, a média dos 16 deltas, que é o mesmo que (F1 macro K=40 − F1 macro da linha de base) a menos de arredondamento. Está próximo de zero, o que é exatamente o "nenhuma perda detetável" do <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>.</li>
+</ul>
+<p><strong>Um exemplo resolvido a partir da tabela.</strong> A faixa 1 ganha +0,041 e a faixa 4 ganha +0,018, enquanto a faixa 15 perde −0,063 e as faixas 9 e 10 perdem −0,026 cada. Se olhasse apenas para o agregado, concluiria que "o corte não custou nada". Ler as linhas diz-lhe que o corte <em>deslocou</em> desempenho de umas faixas para outras. Como o F1 macro dá o mesmo peso a todas as faixas independentemente do suporte, um ganho numa faixa de 172 linhas e uma perda numa faixa de 496 linhas contam o mesmo na média — e é por isso que a reorganização é invisível no agregado mas visível por classe.</p>
+<p><strong>Um número que não fecha.</strong> Os 16 deltas da tabela somam −0,158, pelo que a sua média é −0,0099, e não os −0,0098 indicados no <a class="xref" href="#2-sumário-executivo">§2</a> e no <a class="xref" href="#5-4-comportamento-por-classe-k40-contra-a-linha-de-base">§5.4</a>. A diferença é de arredondamento: cada delta é apresentado com três casas decimais, pelo que a média carrega um erro de cerca de ±0,0002. A diferença não é material, mas o valor deve ser lido como "cerca de −0,0099".</p>
+<p><strong>Porque não é o mesmo que "o modelo piorou".</strong> Uma perda seria um deslocamento uniforme para baixo em todas as linhas. Uma reorganização é uma <em>redistribuição</em>: umas linhas sobem, outras descem, o saldo é aproximadamente nulo. A distinção importa para o argumento do <a class="xref" href="#6-1-quarenta-colunas-igualam-a-linha-de-base-em-termos-agregados-mas-reorganizam-por-classe">§6.1</a>: o projeto precisa das faixas intermédias bem separadas (para a deteção de anomalias de perfil), por isso uma redistribuição que custa a faixa 15 é um custo real mesmo com a média plana.</p>
+<p><strong>O que não significa.</strong> Não é uma afirmação estatística de que os dois modelos são equivalentes, nem uma afirmação de que as diferenças por classe são significativas — os folds não são independentes (<a class="xref" href="#3-2-validação-cruzada-repetida">§3.2</a>, limitação 3 do <a class="xref" href="#9-limitações">§9</a>), por isso não é corrido nenhum teste de significância. É uma descrição da tabela.</p>
+<hr />
+<h2 id="10-reprodução">10. Reprodução<a class="anchor" href="#10-reprodução" aria-label="link">#</a></h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A partir da raiz do repositório, em c60f8f8 com a árvore limpa:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/jupyter</span> nbconvert <span class="at">--to</span> notebook <span class="at">--execute</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  notebooks/04_feature_selection.ipynb <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output-dir</span> /tmp/opencode <span class="at">--output</span> 04_executed.ipynb <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ExecutePreprocessor.timeout</span><span class="op">=</span>14400</span></code></pre></div>
+<p>O notebook versionado corre por omissão em modo de simulação (<code>SMOKE = True</code>, ~14 min, números sem significado). Para a execução real, definir <code>SMOKE = False</code> numa cópia e executar essa cópia; os artefactos ficam em <code>outputs/</code> independentemente, porque os caminhos vêm de <code>daa.config</code>.</p>
+<p>Artefactos escritos:</p>
+<table>
+<thead>
+<tr class="header">
+<th>ficheiro</th>
+<th>conteúdo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>outputs/selected_features.json</code></td>
+<td>a lista final de 40 colunas, impressões digitais, proveniência</td>
+</tr>
+<tr class="even">
+<td><code>outputs/feature_selection_k_sweep.csv</code></td>
+<td>K, F1 macro, diferença emparelhada, indicador de aprovação, id da execução</td>
+</tr>
+<tr class="odd">
+<td><code>outputs/feature_selection_ranking.csv</code></td>
+<td>ordenação da Etapa 2 pela RF ordinal, todas as 136</td>
+</tr>
+<tr class="even">
+<td><code>outputs/feature_selection_ranking_deployed.csv</code></td>
+<td>ordenação implementada com <code>hist_gb</code>, todas as 136</td>
+</tr>
+<tr class="odd">
+<td><code>outputs/submission_selected_k40.csv</code></td>
+<td>submissão, K=40</td>
+</tr>
+<tr class="even">
+<td><code>outputs/submission_all_features.csv</code></td>
+<td>submissão, todas as 255 entradas</td>
+</tr>
+</tbody>
+</table>
+<p>Ambas as submissões validadas: 3.655 linhas, <code>RowId</code> 0…3654, 16 classes.</p>
+<p><strong>Pendente:</strong> carregar ambas para o Kaggle e registar as duas pontuações de F1 macro. É a única evidência que falta para fechar a <a class="xref" href="#6-4-o-otimismo-de-seleção-é-00137-e-a-lista-final-é-instável">§6.4</a>.</p>
+
+  </div>
+</section>
+
+</main>
+</div>
+<button id="to-top" title="Back to top" aria-label="Back to top">&#8593;</button>
+<script>
+(function () {
+  var btn = document.getElementById('to-top');
+  window.addEventListener('scroll', function () {
+    btn.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+  btn.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a[href^="#"]'));
+  var targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute('href').slice(1));
+  });
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var i = targets.indexOf(e.target);
+        links.forEach(function (a, j) { a.classList.toggle('active', i === j); });
+      });
+    }, { rootMargin: '0px 0px -75% 0px' });
+    targets.forEach(function (t) { if (t) obs.observe(t); });
+  }
+})();
+</script>
+<script>
+(function () {
+  function show(lang) {
+    document.querySelectorAll('section.report').forEach(function (s) {
+      s.hidden = s.dataset.lang !== lang;
+    });
+    document.querySelectorAll('nav.toc').forEach(function (n) {
+      n.hidden = n.dataset.for !== lang;
+    });
+    document.documentElement.lang = lang;
+    if (history.replaceState) history.replaceState(null, '', '#' + lang);
+  }
+  document.querySelectorAll('[data-switch]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      show(a.dataset.switch);
+      window.scrollTo({ top: 0 });
+    });
+  });
+  var start = (location.hash.match(/^#(en|pt)$/) || [])[1];
+  if (start) show(start);
+})();
+</script>
+</body>
+</html>

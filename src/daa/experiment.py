@@ -16,6 +16,7 @@ from sklearn.pipeline import Pipeline
 from .data import load_train
 from .evaluation.cv import RunResult, run_cv, write_run
 from .features.preprocess import build_preprocessor
+from .features.selection import columns_fingerprint, subset_spec
 from .models.registry import make_model
 from .splits import Fold
 
@@ -47,6 +48,8 @@ def run_experiment(
     X: pd.DataFrame | None = None,
     y: pd.Series | None = None,
     folds: list[Fold] | None = None,
+    columns: list[str] | None = None,
+    feature_set: str | None = None,
     fit_full: bool = False,
     save: bool = True,
     output_dir: str | Path | None = None,
@@ -60,21 +63,38 @@ def run_experiment(
         preprocessor: ``"impute"`` or ``"passthrough"``.
         X, y: optional; loaded from ``data/dataset_train.csv`` when omitted.
         folds: optional; the frozen splits are loaded when omitted.
+        columns: optional shortlist. When given, only these columns reach the
+            model; every name must be an input of the inferred spec (see
+            ``daa.features.selection.subset_spec``). ``None`` means all inputs.
+        feature_set: label recorded in ``params`` so the leaderboard says which
+            columns a run used. Defaults to ``"all"`` or ``"subset"``.
         fit_full: also fit on all rows, which is required for a submission.
         save: write the run directory and leaderboard row.
         output_dir: override ``outputs/runs`` (useful in tests).
 
+    Invariants:
+        The recorded ``params`` always carry ``feature_set``, the number of
+        input columns, and a short ``feature_hash``, so two runs with different
+        columns are distinguishable even when the names are similar.
+
     Failure modes:
         ``KeyError`` for an unknown model, ``ValueError`` for an unknown
-        preprocessor variant or a missing target.
+        preprocessor variant, a missing target, or a column that is not an
+        input.
     """
     if X is None or y is None:
         X, y = load_train()
 
     # Imported here to keep the module import graph easy to follow.
-    from .data import infer_column_spec
+    from .data import explicit_spec, infer_column_spec
 
-    spec = infer_column_spec(X)
+    # Infer from dtypes, then apply the hand-written drops (admin metadata,
+    # near-constant columns). Both steps are deterministic and learnt from no
+    # data, so they are safe outside the CV folds.
+    spec = explicit_spec(infer_column_spec(X))
+    if columns is not None:
+        spec = subset_spec(spec, columns)
+
     pipeline = build_pipeline(
         build_preprocessor(spec, variant=preprocessor),
         model_name,
@@ -90,6 +110,9 @@ def run_experiment(
             "preprocessor": preprocessor,
             "model": model_name,
             "model_params": model_params or {},
+            "feature_set": feature_set or ("all" if columns is None else "subset"),
+            "n_input_columns": len(spec.input_columns),
+            "feature_hash": columns_fingerprint(spec.input_columns)[:12],
         },
         fit_full=fit_full,
     )

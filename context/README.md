@@ -10,6 +10,7 @@ This directory is a map, not a library. Open only the file that answers your que
 | Give me the requirement checklist | `assignment/deliverables.md` |
 | Competition rules, target coding, submission format? | `competition/kaggle.md` |
 | Dataset shapes, class counts, ID rules? | `competition/data-dictionary.md` |
+| How are raw text columns turned into numbers (recoding)? | `competition/data-dictionary.md` § "Recoded frame"; code in `../src/daa/features/recode.py` |
 | What did we already find in the data? | `../reports/01_feature_selection_review.md` |
 | Which slide deck covers this method, and on which pages? | `notes/slides-index.md` |
 | Corrected study notes | `notes/ml-reference.md` |
