@@ -9,11 +9,13 @@ import pytest
 from daa.data import TARGET, ColumnSpec, explicit_spec, infer_column_spec
 from daa.experiment import run_experiment
 from daa.features.selection import (
+    FEATURE_SET_NAMES,
     columns_fingerprint,
     load_selected_features,
     mutual_info_screen,
     ordinal_codes,
     rank_by_permutation,
+    resolve_feature_set,
     save_selection,
     subset_spec,
 )
@@ -305,3 +307,51 @@ def test_run_experiment_rejects_unknown_column(synthetic_xy, folds):
             columns=["not_a_column"],
             save=False,
         )
+
+
+# --------------------------------------------------------------------------
+# resolve_feature_set
+# --------------------------------------------------------------------------
+
+
+def test_resolve_feature_set_all_returns_none(spec):
+    assert resolve_feature_set("all", spec) is None
+    assert set(FEATURE_SET_NAMES) == {"all", "selected"}
+
+
+def test_resolve_feature_set_selected_reads_shortlist(tmp_path, synthetic_xy):
+    features, target = synthetic_xy
+    spec = explicit_spec(infer_column_spec(features))
+    path = save_selection(
+        tmp_path / "selected.json",
+        ["num_height", "cat_sex"],
+        spec=spec,
+        target=target,
+    )
+
+    columns = resolve_feature_set("selected", spec, target=target, path=path)
+
+    assert columns == ("num_height", "cat_sex")
+
+
+def test_resolve_feature_set_uses_default_path(tmp_path, synthetic_xy, monkeypatch):
+    features, target = synthetic_xy
+    spec = explicit_spec(infer_column_spec(features))
+    path = save_selection(tmp_path / "selected.json", ["num_height"], spec=spec, target=target)
+    monkeypatch.setattr("daa.features.selection.SELECTED_FEATURES_PATH", path)
+
+    assert resolve_feature_set("selected", spec, target=target) == ("num_height",)
+
+
+def test_resolve_feature_set_unknown_name_lists_valid_names(spec):
+    with pytest.raises(ValueError, match="unknown feature set 'bogus'.*'all', 'selected'"):
+        resolve_feature_set("bogus", spec)
+
+
+def test_resolve_feature_set_rejects_stale_target(tmp_path, synthetic_xy):
+    features, target = synthetic_xy
+    spec = explicit_spec(infer_column_spec(features))
+    path = save_selection(tmp_path / "selected.json", ["num_height"], spec=spec, target=target)
+
+    with pytest.raises(ValueError, match="different target"):
+        resolve_feature_set("selected", spec, target=target + 1, path=path)

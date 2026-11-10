@@ -52,15 +52,30 @@ result = run_experiment(
     "decision_tree",
     {"max_depth": 12, "min_samples_leaf": 20},
     name="decision_tree_baseline",
+    feature_set="selected",  # named shortlist, resolved from outputs/selected_features.json
+    search="grid",           # or "random", or {"kind", "space", "n_iter", "scoring", "n_jobs"}
     fit_full=True,
 )
 result.metrics
 ```
 
-Pass `columns=[...]` to restrict a run to a shortlist. The run records
-`feature_set`, `n_input_columns` and a short `feature_hash`, so the leaderboard
-says which columns it used. `daa.features.selection` builds the ranking, writes
-the shortlist file, and validates it on load.
+Features are named, not listed: `feature_set="selected"` resolves the shortlist
+through `daa.features.selection.resolve_feature_set`, which validates the
+persisted file (column and target fingerprints) on every load. `feature_set`
+defaults to `"all"`; `columns=[...]` remains as an explicit override for tests
+and ablations and wins over name resolution. `preprocessor=None` (the default)
+uses `daa.features.preprocess.DEFAULT_VARIANT`, pinned by the encoding owner.
+`search=` wraps the pipeline with `daa.models.spaces.build_search` before the
+CV loop — since `run_cv` clones per fold, this is honest nested CV, and the
+refit search object still `predict`s for submissions. `repeats=1` keeps only
+the first repeat for fast iteration (combine with `save=False`). Pass
+`estimator=` instead of `model_name` to use a pre-built estimator as the `clf`
+step. Every run records `feature_set`, `n_input_columns` and a short
+`feature_hash` in `params` (plus `search` and `repeats` when used), so the
+leaderboard says exactly which columns and configuration a row used.
+`daa.features.selection` builds the ranking, writes the shortlist file, and
+validates it on load; `daa.evaluation.load_run` reads a saved run back for
+error analysis.
 
 A notebook experiment is usually just a `Pipeline` plus `run_cv`:
 
@@ -84,19 +99,27 @@ result = run_cv(pipeline, X, y, get_folds(y), name="rf_v1")
 
 | Path | Owner | Responsibility |
 |---|---|---|
+| `src/daa/config.py` | A | Paths, environment overrides, `SEED` |
 | `src/daa/data.py` | A | CSV loaders and `ColumnSpec` (frozen) |
-| `src/daa/features/` | A | Preprocessing variants and feature blocks |
-| `src/daa/models/` | B | Model registry and search spaces |
+| `src/daa/splits.py` | A | Frozen fold indices |
+| `src/daa/features/recode.py` | A | The fixed recoding rule-book |
+| `src/daa/features/selection.py` | A | Ranking, the shortlist artifact, named feature sets |
+| `src/daa/features/preprocess.py` | B | Preprocessor variants and `DEFAULT_VARIANT` |
+| EDA / feature-engineering notebooks | B | Decisions about features and encoding |
+| `src/daa/models/` | C | Model registry and search spaces |
 | `src/daa/evaluation/` | C | Metrics, CV loop, reports, submission |
-| `src/daa/splits.py` | C | Frozen fold indices |
-| `src/daa/experiment.py` | C | Compose + run + persist |
+| `src/daa/experiment.py` | C | Compose + run + persist (resolves names, defines none) |
 | `tests/` | C | Contract, leakage, metric, and submission tests |
+| `docs/` | C | Role guides (encoding, models) |
 | `notebooks/` | all | Thin drivers; no reusable definitions |
+| `outputs/selected_features.json` | A | The persisted shortlist behind `feature_set="selected"` |
 | `splits/folds.npz` | frozen | 5-fold × 3 repeats, seed 42 |
 | `outputs/leaderboard.csv` | shared | Append-only run log |
 
-Ownership is decided after the joint Phase 0 sessions. Until then, the table is
-the default and not a lock.
+This is the division of labour agreed by the group. `experiment.py` only
+*composes*: it resolves names, it never defines them — columns come from the
+feature-selection owner's artifact, the encoding default from the encoding
+owner's module, and models/search spaces from `models/`.
 
 ### Frozen core
 
@@ -114,6 +137,32 @@ it fails loudly instead of silently mixing experiments. Regenerate deliberately:
 ```bash
 python -m daa.splits --force
 ```
+
+## Global variables and their effect on runs
+
+Every module-level constant below changes what a run does or records. "Frozen"
+means change only by group agreement, because historical leaderboard rows depend
+on it.
+
+| Global | Module | Owner | Effect on runs | Status |
+|---|---|---|---|---|
+| `SEED` | `config.py` | A | Single seed for models, selection and folds; changing it makes all runs non-comparable | frozen |
+| `DATA_DIR`, `TRAIN_PATH`, `TEST_PATH` | `config.py` | A | Which CSVs are read (`DAA_DATA_DIR` override) | |
+| `OUTPUTS_DIR`, `RUNS_DIR` | `config.py` | A | Where run dirs and `leaderboard.csv` are written (`DAA_OUTPUT_DIR`) | |
+| `SPLITS_PATH` | `config.py` | A | Which folds file is loaded (`DAA_SPLITS_PATH`) | |
+| `SELECTED_FEATURES_PATH` | `config.py` | A | Which shortlist `feature_set="selected"` resolves to (`DAA_SELECTED_FEATURES_PATH`) | |
+| `DEFAULT_SPLIT_CONFIG` (`n_splits=5`, `n_repeats=3`, `seed`) | `splits.py` | A | The CV scheme; persisted in `splits/folds.npz` with a target fingerprint | frozen |
+| `VARIANTS`, `DEFAULT_VARIANT` | `features/preprocess.py` | B | Which preprocessing runs when `preprocessor=None`; recorded in `params["preprocessor"]` | |
+| `FEATURE_SET_NAMES` | `features/selection.py` | A | Which `feature_set=` names are accepted; the resolved columns are recorded via `feature_hash` in `params` | |
+| `MODELS`, `MODEL_NAMES` | `models/registry.py` | C | Available model names for `run_experiment`; recorded in `params["model"]` | |
+| `SEARCH_SPACES` | `models/spaces.py` | C | Default grids for `search=` (`clf__` prefix); recorded in `params["search"]` | |
+| `METRICS` | `evaluation/metrics.py` | C | Per-fold metrics aggregated into every run | frozen |
+| `SCORERS` | `evaluation/metrics.py` | C | Valid `scoring=` names for search | |
+| `SCORE_COLUMNS` | `evaluation/cv.py` | C | Which metrics get mean/std in `RunResult` | |
+| `SUBMISSION_COLUMNS` | `evaluation/submit.py` | C | Submission CSV contract | |
+
+`ColumnSpec` (`data.py`) and the run artifact schema / leaderboard columns are
+frozen as well — see "Frozen core" above.
 
 ## Run artifacts
 
@@ -162,6 +211,7 @@ No tracked `.ipynb` may contain outputs or execution counts.
 DAA_DATA_DIR=/path/to/data
 DAA_OUTPUT_DIR=/tmp/daa_runs
 DAA_SPLITS_PATH=/tmp/folds.npz
+DAA_SELECTED_FEATURES_PATH=/tmp/selected_features.json
 ```
 
 Useful for tests and for notebook smoke runs that should not pollute

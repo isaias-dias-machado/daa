@@ -1,5 +1,5 @@
 """Feature transformers and the preprocessor builder."""
 
-from .preprocess import VARIANTS, build_preprocessor
+from .preprocess import DEFAULT_VARIANT, VARIANTS, build_preprocessor
 
-__all__ = ["VARIANTS", "build_preprocessor"]
+__all__ = ["DEFAULT_VARIANT", "VARIANTS", "build_preprocessor"]

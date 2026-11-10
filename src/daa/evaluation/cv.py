@@ -63,8 +63,16 @@ class RunResult:
 
 
 def _feature_count(fitted_estimator) -> int:
-    """Number of columns produced by the ``prep`` step, or 0 if unknown."""
-    steps = getattr(fitted_estimator, "named_steps", {})
+    """Number of columns produced by the ``prep`` step, or 0 if unknown.
+
+    A search object (``GridSearchCV`` / ``RandomizedSearchCV``) has no
+    ``named_steps`` of its own; its ``best_estimator_`` is the pipeline, so
+    look through it.
+    """
+    estimator = fitted_estimator
+    if not hasattr(estimator, "named_steps") and hasattr(estimator, "best_estimator_"):
+        estimator = estimator.best_estimator_
+    steps = getattr(estimator, "named_steps", {})
     preprocessor = steps.get("prep")
     if preprocessor is not None and hasattr(preprocessor, "get_feature_names_out"):
         return len(preprocessor.get_feature_names_out())
@@ -80,6 +88,7 @@ def run_cv(
     name: str = "run",
     labels: tuple[int, ...] | None = None,
     params: dict[str, Any] | None = None,
+    repeats: int | None = None,
     fit_full: bool = False,
 ) -> RunResult:
     """Fit ``estimator`` on every fold and collect scores and OOF predictions.
@@ -87,10 +96,18 @@ def run_cv(
     The estimator is cloned per fold. If it is a ``Pipeline``, the whole
     preprocessor is refitted on each training fold; that is the point.
 
+    Parameters:
+        repeats: when given, keep only folds with ``fold.repeat < repeats``.
+            Reduced repeats are for fast iteration only; combine with
+            ``save=False`` so a partial run never lands on the leaderboard as
+            if it were the full scheme. Record it in ``params`` yourself when
+            saving.
+
     Failure modes:
         ``TypeError`` when ``X`` is not a DataFrame (column names matter for
         interpretation).
-        ``ValueError`` when ``X`` and ``y`` have different lengths.
+        ``ValueError`` when ``X`` and ``y`` have different lengths, or when
+        ``repeats < 1``.
     """
     if not isinstance(X, pd.DataFrame):
         raise TypeError("X must be a pandas DataFrame; column names are part of the contract")
@@ -98,6 +115,10 @@ def run_cv(
         raise ValueError(f"X and y have different lengths: {len(X)} != {len(y)}")
     if folds is None:
         folds = get_folds(y)
+    if repeats is not None:
+        if repeats < 1:
+            raise ValueError(f"repeats must be at least 1, got {repeats}")
+        folds = [fold for fold in folds if fold.repeat < repeats]
 
     label_list = tuple(sorted(pd.unique(y))) if labels is None else tuple(labels)
     fold_rows: list[dict[str, float]] = []
@@ -275,3 +296,48 @@ def _append_leaderboard(result: RunResult, path: Path) -> None:
         leaderboard = pd.DataFrame([row])
     path.parent.mkdir(parents=True, exist_ok=True)
     leaderboard.to_csv(path, index=False)
+
+
+def load_run(run_dir: str | Path) -> RunResult:
+    """Read one saved run directory back into a ``RunResult``.
+
+    Purpose: error analysis and comparisons need past runs without re-running
+    them. This is the inverse of ``write_run`` for every artifact it writes:
+    ``metrics.json``, ``params.json``, ``fold_scores.csv``,
+    ``oof_predictions.csv``, ``per_class.csv``, ``confusion_matrix.csv``, and
+    ``estimator.joblib`` when present.
+
+    Invariants:
+        ``metrics``, ``labels``, and ``n_features`` come from
+        ``metrics.json``; ``params`` from ``params.json``. ``confusion`` keeps
+        its labelled index. ``estimator`` is ``None`` when the run was saved
+        without ``fit_full=True``.
+
+    Failure modes:
+        ``FileNotFoundError`` when the directory or any artifact is absent.
+    """
+    run_directory = Path(run_dir)
+    metadata = json.loads((run_directory / "metrics.json").read_text())
+    params = json.loads((run_directory / "params.json").read_text())
+    fold_scores = pd.read_csv(run_directory / "fold_scores.csv")
+    oof = pd.read_csv(run_directory / "oof_predictions.csv")
+    per_class = pd.read_csv(run_directory / "per_class.csv")
+    confusion = pd.read_csv(run_directory / "confusion_matrix.csv", index_col=0)
+
+    estimator_path = run_directory / "estimator.joblib"
+    estimator = joblib.load(estimator_path) if estimator_path.exists() else None
+
+    return RunResult(
+        name=str(metadata["name"]),
+        run_id=str(metadata["run_id"]),
+        timestamp=str(metadata["timestamp"]),
+        fold_scores=fold_scores,
+        metrics=dict(metadata["metrics"]),
+        oof=oof,
+        per_class=per_class,
+        confusion=confusion,
+        labels=tuple(metadata["labels"]),
+        n_features=int(metadata["n_features"]),
+        params=params,
+        estimator=estimator,
+    )

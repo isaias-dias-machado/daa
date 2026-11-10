@@ -9,6 +9,7 @@ and for running notebooks against a temporary output directory:
 - ``DAA_DATA_DIR``
 - ``DAA_OUTPUT_DIR``
 - ``DAA_SPLITS_PATH``
+- ``DAA_SELECTED_FEATURES_PATH``
 """
 
 from __future__ import annotations
@@ -23,6 +24,9 @@ DATA_DIR = Path(os.environ.get("DAA_DATA_DIR", PROJECT_ROOT / "data"))
 OUTPUTS_DIR = Path(os.environ.get("DAA_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
 RUNS_DIR = OUTPUTS_DIR / "runs"
 SPLITS_PATH = Path(os.environ.get("DAA_SPLITS_PATH", PROJECT_ROOT / "splits" / "folds.npz"))
+SELECTED_FEATURES_PATH = Path(
+    os.environ.get("DAA_SELECTED_FEATURES_PATH", OUTPUTS_DIR / "selected_features.json")
+)
 
 TRAIN_PATH = DATA_DIR / "dataset_train.csv"
 TEST_PATH = DATA_DIR / "dataset_test_X.csv"

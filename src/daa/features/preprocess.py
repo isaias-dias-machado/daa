@@ -16,6 +16,11 @@ from ..data import ColumnSpec
 
 VARIANTS = ("impute", "passthrough")
 
+# The variant used when a caller does not name one (``run_experiment`` with
+# ``preprocessor=None``). Pinned here, by the encoding owner, so callers never
+# hardcode a variant of their own.
+DEFAULT_VARIANT = "impute"
+
 
 def build_preprocessor(spec: ColumnSpec, variant: str = "impute") -> ColumnTransformer:
     """Return an unfitted preprocessor for the columns in ``spec``.

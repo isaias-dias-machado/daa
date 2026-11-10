@@ -38,7 +38,7 @@ from sklearn.base import clone
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.inspection import permutation_importance
 
-from ..config import SEED
+from ..config import SEED, SELECTED_FEATURES_PATH
 from ..data import ID_COLUMNS, TARGET, ColumnSpec, target_fingerprint
 from ..evaluation.metrics import SCORERS
 from ..splits import Fold
@@ -403,3 +403,49 @@ def load_selected_features(
         target_fingerprint=stored_target,
         metadata=dict(payload.get("metadata", {})),
     )
+
+
+FEATURE_SET_NAMES = ("all", "selected")
+
+
+def resolve_feature_set(
+    name: str,
+    spec: ColumnSpec,
+    target: pd.Series | None = None,
+    path: str | Path | None = None,
+) -> tuple[str, ...] | None:
+    """Resolve a named feature set to the columns it means.
+
+    Purpose: let callers name a feature set (``feature_set="selected"``)
+    instead of listing columns, so the column decision stays with the owner of
+    the shortlist artifact and the caller only names it. This function defines
+    the names; it never invents columns.
+
+    Names:
+        ``"all"``: no restriction; returns ``None`` so the caller keeps the
+        full spec.
+        ``"selected"``: the columns of the persisted shortlist at ``path``
+        (default ``config.SELECTED_FEATURES_PATH``), validated by
+        ``load_selected_features`` against ``spec`` and, when given,
+        ``target``.
+
+    Invariants:
+        The returned tuple is in shortlist order (most important first); the
+        caller re-orders it through ``subset_spec`` when building the spec.
+
+    Failure modes:
+        ``ValueError`` for an unknown name (the message lists
+        ``FEATURE_SET_NAMES``) and every failure mode of
+        ``load_selected_features`` (missing file, tampered list, stale target
+        fingerprint).
+    """
+    if name not in FEATURE_SET_NAMES:
+        raise ValueError(f"unknown feature set {name!r}; choose from {FEATURE_SET_NAMES}")
+    if name == "all":
+        return None
+    selection = load_selected_features(
+        path if path is not None else SELECTED_FEATURES_PATH,
+        spec,
+        target=target,
+    )
+    return selection.columns
