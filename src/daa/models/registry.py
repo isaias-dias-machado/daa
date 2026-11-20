@@ -19,6 +19,7 @@ from sklearn.ensemble import (
 )
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
 
 from ..config import SEED
 
@@ -41,6 +42,7 @@ MODELS: dict[str, ModelFactory] = {
         random_state=SEED,
     ),
     "hist_gb": partial(HistGradientBoostingClassifier, random_state=SEED),
+    "xgboost": partial(XGBClassifier, random_state=SEED),
 }
 
 MODEL_NAMES = tuple(MODELS)
